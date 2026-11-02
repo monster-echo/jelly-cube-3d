@@ -44,7 +44,11 @@ if [[ -d build/ios/archive/Runner.xcarchive ]]; then
     [[ "$(plutil -extract CFBundleShortVersionString raw "$plist" 2>/dev/null)" == "1.0.0" ]] && ok "Version 1.0.0" || bad "Version mismatch"
     [[ "$(plutil -extract ITSAppUsesNonExemptEncryption raw "$plist" 2>/dev/null)" == "false" ]] && ok "Encryption declaration" || bad "Missing export compliance"
     [[ -f "$APP/PrivacyInfo.xcprivacy" ]] && ok "App privacy manifest in bundle" || bad "App privacy manifest not in bundle"
-    codesign -dv "$APP" >/dev/null 2>&1 && ok "Codesigned archive" || bad "Archive is not codesigned"
+    if codesign -dv "$APP" 2>&1 | grep -q 'Authority=Apple Distribution'; then
+      ok "Apple Distribution-signed archive"
+    else
+      bad "Archive is not Apple Distribution-signed"
+    fi
   else
     bad "iOS app not found in archive"
   fi

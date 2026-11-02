@@ -74,7 +74,7 @@
 
 Known local state:
 
-- Apple team `2VA9TC6SG4` exists; 3 valid codesigning identities; profiles exist for Pindou/CortexTerminal only.
+- Apple team `2VA9TC6SG4` exists; Apple Distribution/Development identities exist; no app-specific App Store profile for this bundle.
 - Google publisher service-account key exists for another project; access to a new app is unverified.
 - New Android upload key generated for this app and local signed AAB/APK verified.
 - DevEco Studio 26 + OpenHarmony 7 emulator exist; no Jelly Cube 3D Harmony signing profile exists.

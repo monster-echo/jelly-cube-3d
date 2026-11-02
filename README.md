@@ -2,7 +2,7 @@
 
 A glossy, soft-body twisty puzzle built natively in Flutter. Every sticker, highlight, shadow, wobble, and sound is generated in code — there are no runtime image, audio, or font assets. Gameplay is fully offline; optional store purchase integration is planned separately.
 
-> **Release status:** the product is **not store-submittable yet**. The rebrand, production IDs, app icons, privacy manifest, legal drafts, build scripts and CI skeleton are in place; production signing, the IAP flow, exact store screenshots, signed HarmonyOS runtime validation, and console records remain open. See [`RELEASE_READINESS.md`](RELEASE_READINESS.md) and [`DECISIONS.md`](DECISIONS.md).
+> **Release status:** the product is **not store-submittable yet**. The rebrand, production IDs, app icons, privacy manifest, legal drafts, build scripts and CI skeleton are in place; the IAP flow, App Store distribution signing, signed HarmonyOS runtime validation, and console records remain open. Android upload signing, app icons, privacy manifest and store screenshot sets are in place. See [`RELEASE_READINESS.md`](RELEASE_READINESS.md) and [`DECISIONS.md`](DECISIONS.md).
 
 The public entry point is [`lib/jelly_cube_3d.dart`](lib/jelly_cube_3d.dart). The implementation is split into a small cohesive module under [`lib/src`](lib/src).
 
@@ -127,7 +127,7 @@ A 22-test suite currently covers:
 ## Platform builds verified
 
 - Flutter Web: CanvasKit and Wasm release builds.
-- iOS: unsigned simulator archive; a signed distribution IPA is still blocked on an app-specific App Store profile.
+- iOS: archive signs with an Apple Development wildcard; App Store IPA export is blocked on an app-specific App Store profile/app record.
 - Android: release AAB/APK builds signed with the app-specific upload key; Play App Signing enrollment is pending.
 - HarmonyOS: Flutter-OHOS 3.41.10 HAP compiles from `ohos/` in a sanitized path; the HAP is unsigned and signed-device verification is still pending.
 - macOS: debug app builds for local inspection only; Mac App Store is out of scope.

@@ -28,8 +28,8 @@ The original findings below are preserved as audit evidence. This pass has alrea
 | Store copy / assets | missing | English/Chinese listing drafts, icons, Play feature graphic, screenshot requirements |
 | Release scripts | missing | `scripts/build-release.sh`, `scripts/verify-release.sh`, CI workflow skeleton |
 | HarmonyOS | not investigated | `ohos/` host integrated; Flutter-OHOS compile/test/HAP passed; see `docs/HARMONY_SPIKE.md` |
-| Git baseline | missing | local Git repository initialized on `main`; no remote yet |
-| Android signing | debug | **app-specific 4096-bit upload key generated and AAB/APK signed** |
+| Git baseline | local only | Git repository initialized on `main`; no remote yet |
+| Android signing | ready locally | **app-specific 4096-bit upload key generated and AAB/APK signed** |
 | Store screenshots | missing | Apple 6.9/6.5/iPad 13 and Google phone/tablet sets captured |
 
 ### Current blockers after this pass
@@ -37,7 +37,7 @@ The original findings below are preserved as audit evidence. This pass has alrea
 Running `scripts/verify-release.sh` now reports:
 
 ```text
-FAIL iOS archive is not codesigned / IPA missing
+FAIL iOS archive is not Apple Distribution-signed / IPA missing
 FAIL HarmonyOS HAP is unsigned
 ```
 
@@ -50,7 +50,7 @@ Plus work not yet represented by the verifier:
 - Store consoles, age ratings, privacy/data-safety answers and review notes are drafts only.
 - HarmonyOS host is committed and a HAP compiles from a sanitized path, but the HAP is unsigned and ArkTS audio/haptics are not verified.
 - Mainland China is out of v1 scope; no software copyright/APP filing/game approval work has been started.
-- The workspace is not a Git repository, so the CI workflow cannot run yet.
+- A local Git repository now exists on `main`; a remote and CI execution are still open.
 
 ## 1. Executive summary
 
@@ -59,12 +59,12 @@ The game code is in good shape: `flutter analyze` is clean, all 22 tests pass, A
 The remaining distance to a store submission is primarily release engineering and compliance:
 
 1. **Brand/IP gate** — the product name contains “Rubik's” and is used in native labels, UI copy, web metadata and README. This is a high-risk trademark issue and must be resolved before any store submission.
-2. **Android signing** — both the AAB and APK are signed with the Android Debug certificate. A production upload key and Play App Signing are mandatory.
+2. **Android signing** — an app-specific upload key now signs the AAB/APK; Play App Signing enrollment is still a console action.
 3. **iOS delivery** — the archive is unsigned; there is no app-level `PrivacyInfo.xcprivacy`; there is no IPA; the App Icon and Launch Image are still Flutter placeholders (Flutter’s own archive validation flags both).
 4. **Store assets** — the existing screenshots are documentation images at 780×1688 / 1206×2622 / 1668×2420 / 2048×1536, not the exact current App Store / Play / AppGallery sizes. There is no 1024×500 Play feature graphic, no 512×512 Play icon, and no store metadata directory.
 5. **HarmonyOS is now technically feasible, not yet integrated** — Flutter-OHOS 3.41.10, DevEco Studio 26 and an OpenHarmony 7 emulator are installed; a temporary HAP build succeeded. The real repo has no `ohos/` project, no ArkTS audio channel, no Harmony signing, and the generated template currently requests `ohos.permission.INTERNET` and only declares phone form factor.
 6. **No legal/store foundation** — no privacy policy, terms, support page, Data Safety answers, App Store Privacy answers, AppGallery materials, or in-app legal entry.
-7. **No release pipeline** — the directory is not a Git repository, has no `.github/`, no release scripts, no secret policy, no store metadata.
+7. **Release pipeline** — a local Git repository, `.github/` workflow, build scripts and a secret policy now exist; a remote and CI execution are still missing.
 8. **China distribution is an independent project** — software copyright, APP filing, and game approval requirements need a separate decision and timeline.
 
 ## 2. Environment and build evidence
@@ -79,7 +79,7 @@ The remaining distance to a store submission is primarily release engineering an
 | Flutter-OHOS | 3.41.10-ohos-0.0.4-dev, Dart 3.11.5 |
 | DevEco Studio | 26.0.0 |
 | Harmony SDK / emulator | OpenHarmony 7.0.0.105, API 26, `127.0.0.1:5557` |
-| Git | **not a Git repository** |
+| Git | local repository on `main`; no remote configured |
 
 ### Verification commands
 
@@ -258,7 +258,7 @@ Missing: Apple 6.9"/6.5"/13" sets, Play phone/tablet screenshots, feature graphi
 
 ### 4.8 CI/CD and repository
 
-- The directory is not a Git repository. GitHub Actions cannot run until a repo and remote exist.
+- The directory is a local Git repository; GitHub Actions cannot run until a remote exists.
 - No `.github/`, `scripts/`, `store/`, `docs/`, `release.env`, `key.properties`, or release checks.
 - `.gitignore` does not currently exclude future release secrets such as `key.properties`, `release.env`, `*.jks`, `*.keystore`, `*.p12`, `*.p8`, `*.mobileprovision`.
 - No artifact retention, checksum manifest, version-bump policy, or release checklist.
@@ -284,7 +284,9 @@ Do **not** reuse another app’s production signing key. Create new app-specific
 | China game/app licensing | Critical if mainland | Cannot publish in mainland; long lead time | Decide regions first; treat mainland as separate project |
 | Harmony runtime quality | High | Port may not meet 120 Hz/gesture/audio quality | Signed-device spike; fallback to CustomPainter; native rewrite only if needed |
 | Default icons/splash | High | Looks unfinished; Flutter validator flags | Branded icons/launch screens across iOS/Android/OHOS |
-| Debug signing | High | Cannot publish production Android | Create upload key, Play App Signing, CI secret |
+| Play App Signing | Medium | Uploaded AAB not enrollable until console setup | Enroll the app-specific upload key in Play Console |
+| IAP not implemented | High | 5×5/6×6 cannot be sold | Implement StoreKit/Play Billing/Huawei IAP and restore |
+| No App Store distribution profile | High | No IPA/upload | Create App Store Connect record + profile |
 | Missing iOS privacy manifest | High | App Store rejection / compliance gap | Add app-level privacy manifest and encryption declaration |
 | No store assets | High | Cannot submit | Exact-size screenshots, feature graphic, copy |
 | No Git/CI | Medium | No auditable release | Initialize repo, tag workflow, checksums |
@@ -322,7 +324,7 @@ This audit closes when:
 
 - `DECISIONS.md` is signed off.
 - The name/package decisions are recorded.
-- iOS and Android signing assets exist and are app-specific.
+- Android signing assets exist and are app-specific; iOS distribution profile still missing.
 - Default icon/launch placeholders are gone.
 - App-level privacy manifest and legal pages exist.
 - Exhibition-ready store asset set exists.

@@ -53,7 +53,7 @@ Audit date: 2026-11-02
 
 ## Known blockers
 
-- No signed iOS IPA.
+- iOS archive is Apple Development-signed; no App Store distribution IPA.
 - Play App Signing enrollment / Play Console app record pending (local upload key exists).
 - No signed HarmonyOS HAP.
 - No IAP implementation yet.
