@@ -1,1 +1,1 @@
-https://zhongbei.tech/jellycube3d/privacy
+https://auth.zhongbei.tech/legal/privacy?app=jellycube3d&locale=en-US
