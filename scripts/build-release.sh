@@ -60,9 +60,15 @@ build_ios() {
     echo "BLOCKED: no Apple Distribution identity found in the keychain." >&2
     return 4
   fi
+  local export_args=()
+  if [[ -n "${APPLE_EXPORT_OPTIONS_PLIST:-}" ]]; then
+    export_args=(--export-options-plist="$APPLE_EXPORT_OPTIONS_PLIST")
+  else
+    export_args=(--export-method="$APPLE_EXPORT_METHOD")
+  fi
   flutter build ipa --release \
     "${version_args[@]}" "${common_dart_defines[@]}" \
-    --export-method="$APPLE_EXPORT_METHOD" \
+    "${export_args[@]}" \
     --obfuscate --split-debug-info="$OUT/symbols/ios"
   local ipa
   ipa="$(find build/ios/ipa -name '*.ipa' -maxdepth 1 2>/dev/null | head -1 || true)"

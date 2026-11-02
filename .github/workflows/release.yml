@@ -96,18 +96,48 @@ jobs:
           CERT_P12_BASE64: ${{ secrets.APPLE_DISTRIBUTION_CERT_P12 }}
           CERT_PASSWORD: ${{ secrets.APPLE_DISTRIBUTION_CERT_PASSWORD }}
           PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+          PROFILE_NAME: ${{ secrets.APPLE_PROVISIONING_PROFILE_NAME }}
+          SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
+          set -euo pipefail
           echo "$CERT_P12_BASE64" | base64 -d > /tmp/distribution.p12
           security create-keychain -p actions build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p actions build.keychain
           security import /tmp/distribution.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k actions build.keychain
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
           echo "$PROFILE_BASE64" | base64 -d > /tmp/jelly.mobileprovision
           UUID="$(security cms -D -i /tmp/jelly.mobileprovision | plutil -extract UUID raw -)"
-          cp /tmp/jelly.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
-          cp /tmp/jelly.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/jelly.mobileprovision"
+          for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+            mkdir -p "$dir"
+            cp /tmp/jelly.mobileprovision "$dir/$UUID.mobileprovision"
+            cp /tmp/jelly.mobileprovision "$dir/jelly.mobileprovision"
+          done
+          python3 - <<'PY'
+          import os, plistlib
+          from pathlib import Path
+          profile_name = os.environ['PROFILE_NAME']
+          identity = os.environ['SIGNING_IDENTITY']
+          options = {
+              'method': 'app-store-connect',
+              'teamID': '2VA9TC6SG4',
+              'signingStyle': 'manual',
+              'signingCertificate': identity,
+              'provisioningProfiles': {'tech.zhongbei.jellycube3d': profile_name},
+              'uploadSymbols': True,
+          }
+          out = Path(os.environ['RUNNER_TEMP']) / 'ExportOptions.plist'
+          out.write_bytes(plistlib.dumps(options))
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write(f'APPLE_EXPORT_OPTIONS_PLIST={out}\n')
+          project = Path('ios/Runner.xcodeproj/project.pbxproj')
+          text = project.read_text()
+          start = text.index('97C147071CF9000F007C117D /* Release */ = {')
+          end = text.index('name = Release;', start)
+          settings = ('buildSettings = {\nCODE_SIGN_STYLE = Manual;\nCODE_SIGN_IDENTITY = "' +
+                      identity + '";\nPROVISIONING_PROFILE_SPECIFIER = "' + profile_name + '";')
+          project.write_text(text[:start] + text[start:end].replace('buildSettings = {', settings) + text[end:])
+          PY
       - name: Analyze and test
         run: |
           flutter pub get
@@ -115,6 +145,23 @@ jobs:
           ./tool/test.sh
       - name: Build IPA
         run: ./scripts/build-release.sh ios
+      - name: Upload to TestFlight
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPSTORE_ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$APPSTORE_KEY_ID" || -z "$APPSTORE_ISSUER" || -z "$APPSTORE_PRIVATE_KEY" ]]; then
+            echo "App Store Connect API key not configured; skipping TestFlight upload."
+            exit 0
+          fi
+          IPA="$(find build/release -name '*.ipa' -print -quit)"
+          test -n "$IPA"
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          printf '%s\n' "$APPSTORE_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_$APPSTORE_KEY_ID.p8"
+          chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_$APPSTORE_KEY_ID.p8"
+          xcrun altool --upload-app --type ios --file "$IPA" \
+            --apiKey "$APPSTORE_KEY_ID" --apiIssuer "$APPSTORE_ISSUER" --output-format json
       - uses: actions/upload-artifact@v4
         with:
           name: ios-release
