@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check store-facing image sizes, required metadata and forbidden branding."""
+from html.parser import HTMLParser
 from pathlib import Path
 import sys
 
@@ -9,7 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 errors: list[str] = []
 
 
-def image(path: str, size: tuple[int, int]) -> None:
+def image(path: str, size: tuple[int, int], opaque: bool = True) -> None:
     p = ROOT / path
     if not p.is_file():
         errors.append(f"missing image: {path}")
@@ -17,6 +18,8 @@ def image(path: str, size: tuple[int, int]) -> None:
     with Image.open(p) as im:
         if im.size != size:
             errors.append(f"{path}: expected {size}, got {im.size}")
+        if opaque and im.convert("RGBA").getchannel("A").getextrema() != (255, 255):
+            errors.append(f"{path}: alpha channel is not fully opaque")
 
 
 def exists(path: str) -> None:
@@ -66,6 +69,52 @@ for path in (
     "docs/SUPPORT.md",
 ):
     exists(path)
+
+# Character limits that stores enforce at submission time.
+limits = {
+    "store/apple/metadata/en-US/name.txt": 30,
+    "store/apple/metadata/en-US/subtitle.txt": 30,
+    "store/apple/metadata/en-US/promotional_text.txt": 170,
+    "store/apple/metadata/en-US/keywords.txt": 100,
+    "store/apple/metadata/en-US/description.txt": 4000,
+    "store/google/metadata/en-US/title.txt": 30,
+    "store/google/metadata/en-US/short_description.txt": 80,
+    "store/google/metadata/en-US/full_description.txt": 4000,
+}
+for path, limit in limits.items():
+    p = ROOT / path
+    if p.is_file() and len(p.read_text().strip()) > limit:
+        errors.append(f"{path}: {len(p.read_text().strip())} chars > {limit}")
+
+for path in (
+    "store/apple/metadata/en-US/privacy_url.txt",
+    "store/apple/metadata/en-US/support_url.txt",
+    "store/apple/metadata/en-US/marketing_url.txt",
+):
+    p = ROOT / path
+    if p.is_file() and not p.read_text().strip().startswith("https://"):
+        errors.append(f"{path}: must be an https:// URL")
+
+class LocalLinks(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.hrefs: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            for key, value in attrs:
+                if key == "href" and value:
+                    self.hrefs.append(value)
+
+for page in (ROOT / "store/site/jellycube3d").rglob("*.html"):
+    parser = LocalLinks()
+    parser.feed(page.read_text())
+    for href in parser.hrefs:
+        if href.startswith(("http://", "https://", "mailto:", "#")):
+            continue
+        target = (page.parent / href).resolve()
+        if not target.exists():
+            errors.append(f"{page.relative_to(ROOT)}: broken local link {href}")
 
 for md in (ROOT / "store").rglob("*.md"):
     text = md.read_text(errors="ignore")

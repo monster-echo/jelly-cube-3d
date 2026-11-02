@@ -95,6 +95,34 @@ void main() {
     expect(controller.cube.isIntact, isTrue);
   });
 
+  testWidgets('phone/tablet layouts and text scaling paint without overflow', (
+    tester,
+  ) async {
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    for (final size in <Size>[
+      const Size(320, 568),
+      const Size(390, 844),
+      const Size(834, 1210),
+      const Size(1024, 768),
+    ]) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      final controller = JellyCubeController();
+      await tester.pumpWidget(JellyCubeApp(controller: controller));
+      await tester.pump(const Duration(milliseconds: 80));
+      expect(
+        find.byKey(const ValueKey<String>('jelly-canvas')),
+        findsOneWidget,
+        reason: 'canvas at $size',
+      );
+      expect(tester.takeException(), isNull, reason: 'layout at $size');
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    }
+  });
+
   testWidgets('controller.startDemo hides all chrome', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;

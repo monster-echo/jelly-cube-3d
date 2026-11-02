@@ -112,7 +112,7 @@ Run the suite with:
 tool/test.sh
 ```
 
-A 29-test suite currently covers:
+A 30-test suite currently covers:
 
 - 10,000 random turns in the discrete engine.
 - 10,000 moves through the public controller, checking the integer state stays intact.

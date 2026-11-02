@@ -1520,25 +1520,32 @@ class _SegmentButton extends StatelessWidget {
                 : null,
           ),
           alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              if (locked) ...<Widget>[
-                Icon(Icons.lock_rounded, size: 9, color: JellyPalette.inkFaint),
-                const SizedBox(width: 2),
-              ],
-              Text(
-                label,
-                style: JellyPalette.label.copyWith(
-                  fontSize: 10.5,
-                  color: selected
-                      ? Colors.white
-                      : locked
-                      ? JellyPalette.inkFaint
-                      : JellyPalette.inkSoft,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (locked) ...<Widget>[
+                  Icon(
+                    Icons.lock_rounded,
+                    size: 9,
+                    color: JellyPalette.inkFaint,
+                  ),
+                  const SizedBox(width: 2),
+                ],
+                Text(
+                  label,
+                  style: JellyPalette.label.copyWith(
+                    fontSize: 10.5,
+                    color: selected
+                        ? Colors.white
+                        : locked
+                        ? JellyPalette.inkFaint
+                        : JellyPalette.inkSoft,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -337,7 +337,20 @@ def main():
     launch = make_launch_image()
     launch.resize((360, 520), Image.Resampling.LANCZOS).save(BRAND_DIR / "launch_logo_360.png")
     launch.save(BRAND_DIR / "launch_logo_720.png")
-    feature = make_feature_graphic()
+    feature = make_feature_graphic().convert("RGBA")
+    # Flatten the feature graphic: Google Play expects an opaque image.
+    fw, fh = 2048, 1000
+    feature = feature.resize((fw, fh), Image.Resampling.LANCZOS)
+    bg = Image.new("RGBA", (fw, fh))
+    top = (244, 238, 249)
+    bottom = (214, 202, 232)
+    bpx = bg.load()
+    for y in range(fh):
+        t = y / max(1, fh - 1)
+        c = tuple(int(top[i] + (bottom[i] - top[i]) * t) for i in range(3)) + (255,)
+        for x in range(fw):
+            bpx[x, y] = c
+    feature = Image.alpha_composite(bg, feature).convert("RGB")
     feature.resize((1024, 500), Image.Resampling.LANCZOS).save(BRAND_DIR / "feature_graphic_1024x500.png")
 
     # iOS AppIcon
