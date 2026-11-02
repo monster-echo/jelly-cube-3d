@@ -24,6 +24,7 @@ The images in [`screenshots`](screenshots) are documentation only; they are not 
 - [HarmonyOS spike report](docs/HARMONY_SPIKE.md)
 - [Privacy policy](docs/PRIVACY.md), [Terms](docs/TERMS.md), [Support](docs/SUPPORT.md)
 - [Store asset workspace](store/README.md), [English listing](store/listing-en.md), [Chinese listing](store/listing-zh-Hans.md)
+- [Apple IAP setup](store/apple/iap-product.md), [Google IAP setup](store/google/iap-product.md), [Huawei IAP status](store/huawei/iap-product.md)
 - [Build script](scripts/build-release.sh), [verification script](scripts/verify-release.sh), [CI workflow](.github/workflows/release.yml)
 
 ## Run it

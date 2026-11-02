@@ -30,7 +30,8 @@ The original findings below are preserved as audit evidence. This pass has alrea
 | HarmonyOS | not investigated | `ohos/` host integrated; Flutter-OHOS compile/tests/HAP passed; unsigned HAP runs on the OpenHarmony 7 emulator; see `docs/HARMONY_SPIKE.md` |
 | Git baseline | local only | Git repository initialized on `main`; no remote yet |
 | Android signing | ready locally | **app-specific 4096-bit upload key generated and AAB/APK signed** |
-| Store screenshots | missing | Apple 6.9/6.5/iPad 13 and Google phone/tablet sets captured |
+| Store screenshots | missing | Apple 6.9/6.5/iPad 13, Google phone/tablet, AppGallery emulator sets captured |
+| Automated tests | 22 tests | 24/24 passing |
 
 ### Current blockers after this pass
 
@@ -42,16 +43,20 @@ FAIL HarmonyOS HAP is unsigned
 
 Plus work not yet represented by the verifier:
 
-- 5×5/6×6 IAP client is implemented (locked UI, purchase, restore, offline cache); store product creation and sandbox testing are still required.
-- Exact App Store / Google Play / AppGallery screenshot sets are not captured.
-- App Store Connect, Play Console and AppGallery Connect app records are not created/verified.
-- Huawei/Apple/Google app-specific signing material is not present.
+- 5×5/6×6 IAP client is implemented; store product creation and sandbox purchase/restore testing are still required.
+- Store screenshot sets are captured; AppGallery screenshots are from the OpenHarmony emulator and may need a signed-device recapture.
+- App Store Connect upload/app record verification, Play Console app record/Play App Signing, and AGC app record are still open.
+- Apple Distribution profile + signed IPA exist locally; Android upload key + signed AAB/APK exist locally. Huawei AppGallery signing is still missing.
 - Store consoles, age ratings, privacy/data-safety answers and review notes are drafts only.
 - HarmonyOS host is committed; unsigned HAP installs and runs on the OpenHarmony 7 emulator (launch, drag/turn, tool bar). A signed HAP for AppGallery and ArkTS audio/haptics remain open.
+- Huawei IAP Kit is not implemented; paid cube types are unavailable on HarmonyOS until it is.
 - Mainland China is out of v1 scope; no software copyright/APP filing/game approval work has been started.
 - A local Git repository now exists on `main`; a remote and CI execution are still open.
+- Physical-device QA is still pending; simulator/emulator smoke passed.
 
-## 1. Executive summary
+## 1. Executive summary (original pre-remediation audit)
+
+> **Historical baseline.** The findings in sections 1–7 describe the tree before the rename/remediation. Current status and blockers are in section 0.
 
 The game code is in good shape: `flutter analyze` is clean, all 22 tests pass, Android release AAB and iOS unsigned archive build successfully, and a HarmonyOS HAP can be built with the locally installed Flutter-OHOS toolchain after lowering the pubspec SDK constraint.
 

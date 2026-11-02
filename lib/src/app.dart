@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import 'controller.dart';
 import 'palette.dart';
+import 'purchase_ui.dart';
 import 'ui.dart';
 
 /// The public root. In normal mode it presents the full instrument; in demo
@@ -47,6 +49,7 @@ class _JellyCubeAppState extends State<JellyCubeApp>
   late final bool _demo;
   late final double? _demoTime;
   late final bool _ownsController;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -72,7 +75,16 @@ class _JellyCubeAppState extends State<JellyCubeApp>
       _controller.startDemo(freezeAt: _demoTime);
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _controller.loadCachedEntitlement();
+        if (!mounted) return;
+        _controller.loadCachedEntitlement();
+        if (const bool.fromEnvironment('OPEN_PAYWALL')) {
+          Timer(const Duration(milliseconds: 700), () {
+            final nav = _navigatorKey.currentContext;
+            if (mounted && nav != null) {
+              showJellyUnlockSheet(nav, _controller);
+            }
+          });
+        }
       });
     }
     if (!_demo && params['preview'] == 'melt') {
@@ -141,6 +153,7 @@ class _JellyCubeAppState extends State<JellyCubeApp>
 
     return MaterialApp(
       title: "Jelly Cube 3D",
+      navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: theme,
       home: AnimatedBuilder(

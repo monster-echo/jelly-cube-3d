@@ -22,6 +22,12 @@ This directory contains store-facing material only. It is not bundled into the a
 | IAP implementation | Client implemented; store product/price and sandbox testing still required |
 | Exact screenshot sets | **NOT CAPTURED** |
 
+## IAP setup sheets
+
+- [Apple IAP](apple/iap-product.md)
+- [Google IAP](google/iap-product.md)
+- [Huawei IAP status](huawei/iap-product.md)
+
 ## Screenshot rules
 
 - Capture from the release build, not a mockup.

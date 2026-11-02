@@ -2,6 +2,8 @@
 
 Status: **client implemented; store product and sandbox testing pending**
 
+Local StoreKit test config: `ios/Runner/StoreKit/JellyCube3D.storekit` (test price $2.99, not a production price). It is referenced from the Runner scheme. Flutter launch via `simctl` did not inject the config in this environment; use Xcode Run for manual StoreKit testing.
+
 Implemented in `lib/src/purchases.dart` and `lib/src/purchase_ui.dart`: product query, one-time purchase, restore, local entitlement cache, locked/unlocked 5×5/6×6 UI, and store status. The actual product must still be created in App Store Connect, Play Console and (if sold there) AppGallery IAP Kit.
 
 ## Product

@@ -61,7 +61,7 @@ audio, haptics, rotation/split-screen, signed Harmony HAP.
 - [ ] VoiceOver / TalkBack pass
 - [ ] text scaling at 1.2×/1.3×
 - [ ] offline launch (gameplay)
-- [ ] IAP sandbox: buy, cancel, pending, restore, reinstall (client UI exists; store products pending)
+- [ ] IAP sandbox: buy, cancel, pending, restore, reinstall (client UI and local StoreKit config exist; product/console pending)
 - [ ] upgrade install over previous build
 - [ ] store review screenshot audit
 
