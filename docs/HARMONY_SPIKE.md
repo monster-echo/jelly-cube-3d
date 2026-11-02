@@ -25,7 +25,7 @@ sdk: ">=3.11.0 <4.0.0"
 
 flutter-ohos pub get
 flutter-ohos analyze          # clean
-flutter-ohos test             # 24/24 passed
+flutter-ohos test             # 29/29 passed
 
 export DEVECO_SDK_HOME=/Applications/DevEco-Studio.app/Contents/sdk
 flutter-ohos build hap --debug --no-codesign

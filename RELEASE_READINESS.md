@@ -31,7 +31,7 @@ The original findings below are preserved as audit evidence. This pass has alrea
 | Git baseline | local only | Git repository initialized on `main`; no remote yet |
 | Android signing | ready locally | **app-specific 4096-bit upload key generated and AAB/APK signed** |
 | Store screenshots | missing | Apple 6.9/6.5/iPad 13, Google phone/tablet, AppGallery emulator sets captured |
-| Automated tests | 22 tests | 24/24 passing |
+| Automated tests | 22 tests | 29/29 passing |
 
 ### Current blockers after this pass
 

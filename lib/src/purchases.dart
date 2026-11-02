@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The one non-consumable product for the paid cube types.
@@ -23,14 +24,34 @@ enum JellyStoreStatus {
 /// only listens to transactions, stores a local offline entitlement flag, and
 /// exposes product/price/status to the UI. There is no developer backend.
 class JellyPurchaseService extends ChangeNotifier {
-  JellyPurchaseService({this.debugUnlocked = false})
-    : _unlocked = debugUnlocked;
+  JellyPurchaseService({
+    this.debugUnlocked = false,
+    InAppPurchasePlatform? platform,
+  }) : _platformOverride = platform,
+       _unlocked = debugUnlocked;
 
   static const String _prefsKey = 'jelly_cube_3d.extra_types.unlocked';
 
   final bool debugUnlocked;
+  final InAppPurchasePlatform? _platformOverride;
   InAppPurchase? _iapInstance;
+
   InAppPurchase get _iap => _iapInstance ??= InAppPurchase.instance;
+  Stream<List<PurchaseDetails>> get _purchaseStream =>
+      _platformOverride?.purchaseStream ?? _iap.purchaseStream;
+  Future<bool> _isAvailable() =>
+      _platformOverride?.isAvailable() ?? _iap.isAvailable();
+  Future<ProductDetailsResponse> _queryProductDetails(Set<String> ids) =>
+      _platformOverride?.queryProductDetails(ids) ??
+      _iap.queryProductDetails(ids);
+  Future<bool> _buyNonConsumable(PurchaseParam param) =>
+      _platformOverride?.buyNonConsumable(purchaseParam: param) ??
+      _iap.buyNonConsumable(purchaseParam: param);
+  Future<void> _restorePurchases() =>
+      _platformOverride?.restorePurchases() ?? _iap.restorePurchases();
+  Future<void> _completePurchase(PurchaseDetails purchase) =>
+      _platformOverride?.completePurchase(purchase) ??
+      _iap.completePurchase(purchase);
 
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   SharedPreferences? _prefs;
@@ -54,6 +75,7 @@ class JellyPurchaseService extends ChangeNotifier {
   bool get restoring => _status == JellyStoreStatus.restoring;
 
   bool get _storePlatform {
+    if (_platformOverride != null) return true;
     if (kIsWeb) return false;
     return defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.android;
@@ -93,7 +115,7 @@ class JellyPurchaseService extends ChangeNotifier {
     }
 
     try {
-      final available = await _iap.isAvailable();
+      final available = await _isAvailable();
       if (!available) {
         _status = JellyStoreStatus.unavailable;
         _message = 'The store is not available on this device right now.';
@@ -101,7 +123,7 @@ class JellyPurchaseService extends ChangeNotifier {
         return;
       }
 
-      _subscription ??= _iap.purchaseStream.listen(
+      _subscription ??= _purchaseStream.listen(
         _handlePurchases,
         onError: (Object error) {
           _status = JellyStoreStatus.error;
@@ -110,7 +132,7 @@ class JellyPurchaseService extends ChangeNotifier {
         },
       );
 
-      final response = await _iap.queryProductDetails(<String>{
+      final response = await _queryProductDetails(<String>{
         kExtraTypesProductId,
       });
       if (response.productDetails.isEmpty) {
@@ -145,8 +167,8 @@ class JellyPurchaseService extends ChangeNotifier {
     _message = null;
     notifyListeners();
     try {
-      final started = await _iap.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: product),
+      final started = await _buyNonConsumable(
+        PurchaseParam(productDetails: product),
       );
       if (!started) {
         _status = JellyStoreStatus.error;
@@ -167,7 +189,7 @@ class JellyPurchaseService extends ChangeNotifier {
     _message = null;
     notifyListeners();
     try {
-      await _iap.restorePurchases();
+      await _restorePurchases();
       // Restored purchases arrive on purchaseStream. If none arrives, keep the
       // UI in ready state and explain that no purchase was found.
       _status = JellyStoreStatus.ready;
@@ -201,7 +223,7 @@ class JellyPurchaseService extends ChangeNotifier {
           _message = 'Extra Cube Types is unlocked.';
           if (purchase.pendingCompletePurchase) {
             try {
-              await _iap.completePurchase(purchase);
+              await _completePurchase(purchase);
             } catch (_) {}
           }
           notifyListeners();
@@ -213,7 +235,7 @@ class JellyPurchaseService extends ChangeNotifier {
               'The store could not complete the purchase.';
           if (purchase.pendingCompletePurchase) {
             try {
-              await _iap.completePurchase(purchase);
+              await _completePurchase(purchase);
             } catch (_) {}
           }
           notifyListeners();

@@ -25,7 +25,7 @@ The images in [`screenshots`](screenshots) are documentation only; they are not 
 - [Privacy policy](docs/PRIVACY.md), [Terms](docs/TERMS.md), [Support](docs/SUPPORT.md)
 - [Store asset workspace](store/README.md), [English listing](store/listing-en.md), [Chinese listing](store/listing-zh-Hans.md)
 - [Apple IAP setup](store/apple/iap-product.md), [Google IAP setup](store/google/iap-product.md), [Huawei IAP status](store/huawei/iap-product.md)
-- [Build script](scripts/build-release.sh), [verification script](scripts/verify-release.sh), [CI workflow](.github/workflows/release.yml)
+- [Build script](scripts/build-release.sh), [verification script](scripts/verify-release.sh), [CI tests](.github/workflows/ci.yml), [release workflow](.github/workflows/release.yml)
 
 ## Run it
 
@@ -111,7 +111,7 @@ Run the suite with:
 tool/test.sh
 ```
 
-A 24-test suite currently covers:
+A 29-test suite currently covers:
 
 - 10,000 random turns in the discrete engine.
 - 10,000 moves through the public controller, checking the integer state stays intact.
