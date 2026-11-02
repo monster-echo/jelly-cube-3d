@@ -104,7 +104,10 @@ jobs:
           security import /tmp/distribution.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k actions build.keychain
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          echo "$PROFILE_BASE64" | base64 -d > "$HOME/Library/MobileDevice/Provisioning Profiles/jelly.mobileprovision"
+          echo "$PROFILE_BASE64" | base64 -d > /tmp/jelly.mobileprovision
+          UUID="$(security cms -D -i /tmp/jelly.mobileprovision | plutil -extract UUID raw -)"
+          cp /tmp/jelly.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+          cp /tmp/jelly.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/jelly.mobileprovision"
       - name: Analyze and test
         run: |
           flutter pub get
