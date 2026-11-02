@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "A glossy soft-body twisty puzzle"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "A glossy soft-body twisty puzzle"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "Jelly Cube 3D"
+    }
+  ]
+}
