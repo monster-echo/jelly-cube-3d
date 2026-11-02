@@ -23,7 +23,7 @@ The original findings below are preserved as audit evidence. This pass has alrea
 | Android icons / splash | default Flutter mipmaps / white launch | adaptive icon, monochrome, Android 12 splash, lilac launch |
 | iOS privacy manifest | missing | `ios/Runner/PrivacyInfo.xcprivacy` in bundle |
 | Encryption declaration | missing | `ITSAppUsesNonExemptEncryption=false` |
-| Android release hardening | default backup, no round icon | `allowBackup=false`, `usesCleartextTraffic=false`, round/adaptive icon |
+| Android release hardening | default backup, no round icon | `allowBackup=false`, `usesCleartextTraffic=false`, round/adaptive icon; Play Billing adds INTERNET/ACCESS_NETWORK_STATE for store calls only |
 | Legal / support | missing | `docs/PRIVACY.md`, `TERMS.md`, `SUPPORT.md` + in-app About entry |
 | Store copy / assets | missing | English/Chinese listing drafts, icons, Play feature graphic, screenshot requirements |
 | Release scripts | missing | `scripts/build-release.sh`, `scripts/verify-release.sh`, CI workflow skeleton |
@@ -43,7 +43,7 @@ FAIL HarmonyOS HAP is unsigned
 
 Plus work not yet represented by the verifier:
 
-- 5×5/6×6 IAP flow and product IDs are not implemented; `docs/IAP.md` is the implementation plan.
+- 5×5/6×6 IAP client is implemented (locked UI, purchase, restore, offline cache); store product creation and sandbox testing are still required.
 - Exact App Store / Google Play / AppGallery screenshot sets are not captured.
 - App Store Connect, Play Console and AppGallery Connect app records are not created/verified.
 - Huawei/Apple/Google app-specific signing material is not present.
@@ -146,7 +146,7 @@ flutter build hap --release --no-codesign
 - Toolchain exists and works; `flutter doctor` recognizes the HarmonyOS toolchain and the OpenHarmony emulator.
 - The official Flutter SDK does not support OHOS; the installed `flutter-ohos-3.41.9` fork adds `flutter build hap`.
 - Startup failure without `DEVECO_SDK_HOME`; setting `DEVECO_SDK_HOME=/Applications/DevEco-Studio.app/Contents/sdk` fixes the build.
-- Existing pubspec `sdk: ^3.13.5` is incompatible with the OHOS fork’s Dart 3.11.5. Lowering to `>=3.11.0 <4.0.0` in the temp copy allowed `pub get`, clean analyze and 22/22 tests.
+- Existing pubspec `sdk: ^3.13.5` is incompatible with the OHOS fork’s Dart 3.11.5. Lowering to `>=3.11.0 <4.0.0` in the temp copy allowed `pub get`, clean analyze and tests.
 - Generated HAP includes `flutter_assets/shaders/jelly_gloss.frag`, but **runtime FragmentProgram support is unverified**.
 - Generated OHOS module requests `ohos.permission.INTERNET` by default and declares only `deviceTypes: ["phone"]`.
 - No `ohos/` directory in the repo; no ArkTS audio implementation for `studio.jelly/rubiks_jelly_audio`; audio would currently fail silently on OHOS.
@@ -285,7 +285,7 @@ Do **not** reuse another app’s production signing key. Create new app-specific
 | Harmony runtime quality | High | Port may not meet 120 Hz/gesture/audio quality | Signed-device spike; fallback to CustomPainter; native rewrite only if needed |
 | Default icons/splash | High | Looks unfinished; Flutter validator flags | Branded icons/launch screens across iOS/Android/OHOS |
 | Play App Signing | Medium | Uploaded AAB not enrollable until console setup | Enroll the app-specific upload key in Play Console |
-| IAP not implemented | High | 5×5/6×6 cannot be sold | Implement StoreKit/Play Billing/Huawei IAP and restore |
+| IAP store setup | High | 5×5/6×6 cannot be sold until product exists | Create store products, test sandbox, add Huawei IAP Kit |
 | No App Store distribution profile | High | No IPA/upload | Create App Store Connect record + profile |
 | Missing iOS privacy manifest | High | App Store rejection / compliance gap | Add app-level privacy manifest and encryption declaration |
 | No store assets | High | Cannot submit | Exact-size screenshots, feature graphic, copy |

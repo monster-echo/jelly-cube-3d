@@ -1,6 +1,6 @@
 # Jelly Cube 3D
 
-A glossy, soft-body twisty puzzle built natively in Flutter. Every sticker, highlight, shadow, wobble, and sound is generated in code — there are no runtime image, audio, or font assets. Gameplay is fully offline; optional store purchase integration is planned separately.
+A glossy, soft-body twisty puzzle built natively in Flutter. Every sticker, highlight, shadow, wobble, and sound is generated in code — there are no runtime image, audio, or font assets. Gameplay is fully offline; the optional Extra Cube Types purchase is handled by the platform store (Play Billing declares INTERNET only for store communication).
 
 > **Release status:** the product is **not store-submittable yet**. The rebrand, production IDs, app icons, privacy manifest, legal drafts, build scripts and CI skeleton are in place; the IAP flow, App Store distribution signing, signed HarmonyOS runtime validation, and console records remain open. Android upload signing, app icons, privacy manifest and store screenshot sets are in place. See [`RELEASE_READINESS.md`](RELEASE_READINESS.md) and [`DECISIONS.md`](DECISIONS.md).
 
@@ -48,7 +48,7 @@ The launch URL accepts:
 | --- | --- |
 | `demo=true` | Hide every piece of UI and run the muted 4.0-second art-directed loop. |
 | `demo=true&demo_t=1.7` | Freeze the deterministic loop at an exact timestamp. |
-| `size=2`, `size=4` | Boot at 2×2 or 4×4. |
+| `size=2` … `size=6` | Boot at 2×2 through 6×6. |
 | `preview=melt` | Hidden art-direction route: show the hand-solved rainbow puddle. |
 | `preview=melt&melt_t=1.5` | Freeze the puddle at an exact melt time. |
 
@@ -89,6 +89,7 @@ Moves support face turns, primes, doubles, lowercase wide turns (`r`, `u`, …),
 - [`lib/src/audio.dart`](lib/src/audio.dart) — deterministic PCM synthesis (noise, filters, oscillators, envelopes) for twist, spin, poke, drop, scramble, solve, bloop, and snap. There are eight pre-rendered 44.1 kHz buffers and a 16-voice ceiling.
 - [`lib/src/audio_io_web.dart`](lib/src/audio_io_web.dart), [`lib/src/audio_io_native.dart`](lib/src/audio_io_native.dart) — Web Audio / platform-channel PCM playback. The iOS, Android, and macOS hosts live in the native Runner sources.
 - [`lib/src/ui.dart`](lib/src/ui.dart) — the responsive instrument: phone bottom sheet, tablet glass card, thumb capsule, tool ergonomics, and the flavor legend.
+- [`lib/src/purchases.dart`](lib/src/purchases.dart), [`lib/src/purchase_ui.dart`](lib/src/purchase_ui.dart) — StoreKit/Play Billing entitlement, one-time Extra Cube Types unlock, restore and offline cache.
 - [`ohos/`](ohos/) — Flutter-OHOS host project (HarmonyOS NEXT), with the generated HAP validated in a sanitized path. ArkTS audio and signing remain open.
 - [`tool/test.sh`](tool/test.sh) — test runner that stages the project in a path without an apostrophe (a current Flutter test-listener URI quirk).
 
@@ -109,12 +110,12 @@ Run the suite with:
 tool/test.sh
 ```
 
-A 22-test suite currently covers:
+A 24-test suite currently covers:
 
 - 10,000 random turns in the discrete engine.
 - 10,000 moves through the public controller, checking the integer state stays intact.
 - `(R U R' U') × 6` returns strictly to solved.
-- 2×2 / 3×3 / 4×4 shell counts and stage drags.
+- 2×2 through 6×6 shell counts and stage drags.
 - Real stage drags, tool selection, drop physics, and a two-finger preemption smoke test.
 - Manual hand-solve melt easter egg.
 - Controller-triggered demo hiding all chrome.

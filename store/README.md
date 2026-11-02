@@ -11,14 +11,14 @@ This directory contains store-facing material only. It is not bundled into the a
 | Apple icon master | `store/apple/icon-1024.png` |
 | Google icon | `store/google/icon-512.png` |
 | Google feature graphic | `store/google/feature-graphic-1024x500.png` |
-| Apple screenshots | Captured from release web build: 6.9" (1320×2868), 6.5" (1242×2688), iPad 13" (2064×2752) |
+| Apple screenshots | Captured: 6.9" (1320×2868, incl. extra-types sheet), 6.5" (1242×2688), iPad 13" (2064×2752) |
 | Google screenshots | Captured: phone 1080×1920, tablet 1440×2560 |
 | AppGallery screenshots | **Pending signed Harmony device capture** |
 | Store copy | `store/listing-en.md`, `store/listing-zh-Hans.md` |
 | Privacy policy | `docs/PRIVACY.md` |
 | Support | `docs/SUPPORT.md` |
 | IAP plan | `docs/IAP.md` |
-| IAP implementation | **NOT IMPLEMENTED** — product/price and store sandbox required |
+| IAP implementation | Client implemented; store product/price and sandbox testing still required |
 | Exact screenshot sets | **NOT CAPTURED** |
 
 ## Screenshot rules

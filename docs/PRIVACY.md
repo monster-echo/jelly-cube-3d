@@ -36,7 +36,7 @@ The release build does not include a third-party crash-reporting or analytics SD
 
 - The game does not request microphone, camera, contacts, location, or advertising identifiers.
 - Haptics are provided through the platform haptic API. No permission is required on iOS; Android uses the platform haptic feedback API.
-- The app does not request network permission for gameplay. Store billing may use the platform store service.
+- Gameplay does not use the network. The Android build includes the Google Play Billing library, which declares `INTERNET` and `ACCESS_NETWORK_STATE` for communication with the Play Store; the app itself does not send gameplay or analytics data. The iOS build uses StoreKit without a network permission prompt.
 
 ## Children
 

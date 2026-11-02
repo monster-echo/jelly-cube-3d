@@ -68,7 +68,11 @@ if [[ -f "$APK" && -x "$AAPT" ]]; then
   grep -q "targetSdkVersion:'36'" "$BAG" && ok "targetSdk 36" || bad "targetSdk is not 36"
   "$AAPT" dump permissions "$APK" >"$BAG" 2>/dev/null || true
   if grep -q 'android.permission.INTERNET' "$BAG"; then
-    bad "INTERNET permission present in release APK"
+    if grep -q 'com.android.vending.BILLING' "$BAG"; then
+      ok "INTERNET present for Play Billing only (BILLING declared)"
+    else
+      bad "INTERNET permission present without a billing declaration"
+    fi
   else
     ok "No INTERNET permission"
   fi

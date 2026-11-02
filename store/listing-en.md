@@ -1,4 +1,4 @@
-> **DRAFT — do not publish yet.** The 5×5/6×6 IAP flow is planned but not implemented/tested; see `docs/IAP.md`.
+> **DRAFT — do not publish yet.** The 5×5/6×6 IAP client is implemented, but the store product, price and sandbox purchase test are still pending; see `docs/IAP.md`.
 
 # Jelly Cube 3D — English Store Listing Draft
 

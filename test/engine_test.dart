@@ -13,9 +13,20 @@ void main() {
       expect(cube.isIntact, isTrue);
     });
 
-    test('2x2 / 4x4 shell counts', () {
+    test('2x2 through 6x6 shell counts', () {
       expect(JellyCube.solved(2).cubies.length, 8);
+      expect(JellyCube.solved(3).cubies.length, 26);
       expect(JellyCube.solved(4).cubies.length, 56);
+      expect(JellyCube.solved(5).cubies.length, 98);
+      expect(JellyCube.solved(6).cubies.length, 152);
+    });
+
+    test('6x6 accepts outer and wide turns', () {
+      final cube = JellyCube.solved(6);
+      cube.apply(parseJellyMove('R', 6));
+      cube.apply(parseJellyMove('Uw', 6));
+      expect(cube.isSolved, isFalse);
+      expect(cube.isIntact, isTrue);
     });
 
     test('R U R prime U prime six times returns to solved', () {

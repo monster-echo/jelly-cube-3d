@@ -10,3 +10,5 @@ export 'src/controller.dart';
 export 'src/engine.dart' show JellyCube, JellyMove, JellyCubelet;
 export 'src/app.dart' show JellyCubeApp;
 export 'src/ui.dart' show JellyStage;
+export 'src/purchases.dart'
+    show JellyPurchaseService, JellyStoreStatus, kExtraTypesProductId;

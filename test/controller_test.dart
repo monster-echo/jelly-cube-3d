@@ -68,6 +68,23 @@ void main() {
     expect(controller.state()['solved'], isTrue);
     controller.reset();
     expect(controller.state()['moves'], 0);
+    controller.setSize(5);
+    expect(controller.cube.cubies.length, 98);
+    expect(controller.state()['solved'], isTrue);
+    controller.setSize(6);
+    expect(controller.cube.cubies.length, 152);
+    expect(controller.state()['solved'], isTrue);
+  });
+
+  test('extra cube types unlock state is exposed without a store in tests', () {
+    final locked = JellyCubeController();
+    addTearDown(locked.dispose);
+    expect(locked.extraTypesUnlocked, isFalse);
+    final unlocked = JellyCubeController(debugUnlockExtraTypes: true);
+    addTearDown(unlocked.dispose);
+    expect(unlocked.extraTypesUnlocked, isTrue);
+    unlocked.setSize(6);
+    expect(unlocked.state()['size'], 6);
   });
 
   test('a screen drag commits a slice turn', () {

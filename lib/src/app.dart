@@ -60,15 +60,22 @@ class _JellyCubeAppState extends State<JellyCubeApp>
     _demo = widget.demo ?? (queryDemo || envDemo);
     _demoTime = widget.demoTime ?? double.tryParse(params['demo_t'] ?? '');
     final querySize = int.tryParse(params['size'] ?? '');
+    final debugUnlock = params['unlock'] == '1';
     _ownsController = widget.controller == null;
     _controller =
         widget.controller ??
         JellyCubeController(
-          size: (querySize ?? widget.initialSize).clamp(2, 4),
+          size: (querySize ?? widget.initialSize).clamp(2, 6),
+          debugUnlockExtraTypes: debugUnlock,
         );
     if (_demo) {
       _controller.startDemo(freezeAt: _demoTime);
-    } else if (params['preview'] == 'melt') {
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.loadCachedEntitlement();
+      });
+    }
+    if (!_demo && params['preview'] == 'melt') {
       final meltAt = double.tryParse(params['melt_t'] ?? '');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _controller.previewMelt(freezeAt: meltAt);

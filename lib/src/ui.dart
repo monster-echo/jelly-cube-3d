@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'controller.dart';
 import 'about.dart';
 import 'painter.dart';
+import 'purchase_ui.dart';
 import 'palette.dart';
 
 const double _kTabletBreakpoint = 600;
@@ -942,7 +943,12 @@ class _ExpandedPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _SizeSegment(size: controller.size, onChanged: controller.setSize),
+          _SizeSegment(
+            size: controller.size,
+            onChanged: controller.setSize,
+            unlockedExtraTypes: controller.extraTypesUnlocked,
+            onLockedTap: () => showJellyUnlockSheet(context, controller),
+          ),
           const SizedBox(height: 14),
           _SliderRow(
             label: 'Softness',
@@ -1093,6 +1099,8 @@ class _TabletCard extends StatelessWidget {
                 _SizeSegment(
                   size: controller.size,
                   onChanged: controller.setSize,
+                  unlockedExtraTypes: controller.extraTypesUnlocked,
+                  onLockedTap: () => showJellyUnlockSheet(context, controller),
                 ),
                 const SizedBox(height: 14),
                 SizedBox(
@@ -1421,9 +1429,16 @@ class _Stat extends StatelessWidget {
 
 // ------------------------------------------------------------- shared bits
 class _SizeSegment extends StatelessWidget {
-  const _SizeSegment({required this.size, required this.onChanged});
+  const _SizeSegment({
+    required this.size,
+    required this.onChanged,
+    required this.unlockedExtraTypes,
+    required this.onLockedTap,
+  });
   final int size;
   final ValueChanged<int> onChanged;
+  final bool unlockedExtraTypes;
+  final VoidCallback onLockedTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1436,12 +1451,19 @@ class _SizeSegment extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          for (final n in <int>[2, 3, 4])
+          for (final n in <int>[2, 3, 4, 5, 6])
             Expanded(
               child: _SegmentButton(
                 label: '$n×$n',
                 selected: size == n,
-                onTap: () => onChanged(n),
+                locked: n >= 5 && !unlockedExtraTypes,
+                onTap: () {
+                  if (n >= 5 && !unlockedExtraTypes) {
+                    onLockedTap();
+                  } else {
+                    onChanged(n);
+                  }
+                },
               ),
             ),
         ],
@@ -1455,10 +1477,12 @@ class _SegmentButton extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.locked = false,
   });
 
   final String label;
   final bool selected;
+  final bool locked;
   final VoidCallback onTap;
 
   @override
@@ -1466,7 +1490,7 @@ class _SegmentButton extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: label,
+      label: locked ? '$label, locked' : label,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -1486,12 +1510,25 @@ class _SegmentButton extends StatelessWidget {
                 : null,
           ),
           alignment: Alignment.center,
-          child: Text(
-            label,
-            style: JellyPalette.label.copyWith(
-              fontSize: 11,
-              color: selected ? Colors.white : JellyPalette.inkSoft,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              if (locked) ...<Widget>[
+                Icon(Icons.lock_rounded, size: 9, color: JellyPalette.inkFaint),
+                const SizedBox(width: 2),
+              ],
+              Text(
+                label,
+                style: JellyPalette.label.copyWith(
+                  fontSize: 10.5,
+                  color: selected
+                      ? Colors.white
+                      : locked
+                      ? JellyPalette.inkFaint
+                      : JellyPalette.inkSoft,
+                ),
+              ),
+            ],
           ),
         ),
       ),

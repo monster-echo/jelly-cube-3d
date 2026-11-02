@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'audio.dart';
 import 'engine.dart';
 import 'geometry.dart';
+import 'purchases.dart';
 
 enum JellyTool { twist, spin, poke, drop }
 
@@ -111,8 +112,18 @@ class _PointerSeat {
 }
 
 class JellyCubeController extends ChangeNotifier {
-  JellyCubeController({int size = 3}) : _size = size.clamp(2, 6) {
+  JellyCubeController({int size = 3, bool debugUnlockExtraTypes = false})
+    : _size = size.clamp(2, 6),
+      _purchases = JellyPurchaseService(debugUnlocked: debugUnlockExtraTypes) {
     _cube = JellyCube.solved(_size);
+    _purchases.addListener(_onPurchasesChanged);
+  }
+
+  final JellyPurchaseService _purchases;
+
+  void _onPurchasesChanged() {
+    _dirty = true;
+    notifyListeners();
   }
 
   // ------------------------------------------------------------------ state
@@ -255,6 +266,17 @@ class JellyCubeController extends ChangeNotifier {
   double get squashXZ => (1 + _squash * 0.52).clamp(0.94, 1.12);
   double get bodyRockRadians => _rock * math.pi / 180;
   String get audioBackend => _audio.backendName;
+  bool get extraTypesUnlocked => _purchases.unlocked;
+  String get extraTypesPrice => _purchases.price;
+  String get extraTypesTitle => _purchases.title;
+  String get extraTypesDescription => _purchases.description;
+  JellyStoreStatus get storeStatus => _purchases.status;
+  String? get storeMessage => _purchases.message;
+
+  Future<void> loadCachedEntitlement() => _purchases.loadCached();
+  Future<void> initializeStore() => _purchases.init();
+  Future<void> buyExtraTypes() => _purchases.buy();
+  Future<void> restorePurchases() => _purchases.restore();
   Size get viewportSize => _viewportSize;
   Rect get sceneRect => _sceneRect;
 
@@ -1596,6 +1618,8 @@ class JellyCubeController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _toastTimer?.cancel();
+    _purchases.removeListener(_onPurchasesChanged);
+    _purchases.dispose();
     unawaited(_audio.dispose());
     super.dispose();
   }

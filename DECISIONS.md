@@ -1,6 +1,6 @@
 # Release Decisions — Jelly Cube 3D
 
-- Status: **ACCEPTED (with IAP implementation pending product/price setup)**
+- Status: **ACCEPTED (IAP client implemented; product/price/store setup pending)**
 - Created: 2026-11-02
 - Decision owner: product owner
 - Supersedes: working name “Rubik's Jelly”

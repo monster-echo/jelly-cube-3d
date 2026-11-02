@@ -1,4 +1,8 @@
-# In-App Purchase Plan — Extra Cube Types
+# In-App Purchase — Extra Cube Types
+
+Status: **client implemented; store product and sandbox testing pending**
+
+Implemented in `lib/src/purchases.dart` and `lib/src/purchase_ui.dart`: product query, one-time purchase, restore, local entitlement cache, locked/unlocked 5×5/6×6 UI, and store status. The actual product must still be created in App Store Connect, Play Console and (if sold there) AppGallery IAP Kit.
 
 ## Product
 

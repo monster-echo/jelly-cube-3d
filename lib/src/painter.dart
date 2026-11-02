@@ -137,7 +137,8 @@ class JellyPainter extends CustomPainter {
     int cubeSize,
   ) {
     final center = floor.projectStable(V3(0, -cubeSize / 2 - 0.055, 0));
-    final width = floor.scale * (cubeSize * 0.79 + 1.2) * 1.28;
+    final extraMargin = math.max(0, cubeSize - 3) * 0.72;
+    final width = floor.scale * (cubeSize * 0.79 + 1.2 + extraMargin) * 1.28;
     final height = width * (0.34 + floor.camera.pitch * 0.16);
     final plateRect = Rect.fromCenter(
       center: center,
@@ -767,10 +768,12 @@ class JellyPainter extends CustomPainter {
           radius: 1.0,
           colors: <Color>[
             Colors.white.withValues(alpha: 0.62 * alpha * 2.4 * opacity),
-            const Color(0xFFF4EBFA)
-                .withValues(alpha: 0.40 * alpha * 2 * opacity),
-            const Color(0xFFD7C7E8)
-                .withValues(alpha: 0.20 * alpha * 2 * opacity),
+            const Color(
+              0xFFF4EBFA,
+            ).withValues(alpha: 0.40 * alpha * 2 * opacity),
+            const Color(
+              0xFFD7C7E8,
+            ).withValues(alpha: 0.20 * alpha * 2 * opacity),
             Colors.transparent,
           ],
           stops: const <double>[0.0, 0.42, 0.82, 1.0],
