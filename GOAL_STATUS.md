@@ -1,6 +1,10 @@
 # Jelly Cube 3D — Objective Status
 
-**Status: BLOCKED ON EXTERNAL SIGNING / STORE ACCOUNTS — NOT STORE-SUBMITTED**
+**Status: BLOCKED ON STORE APP RECORDS / FINAL ACCOUNTS — NOT STORE-SUBMITTED**
+
+GitHub repository: `monster-echo/jelly-cube-3d`
+
+Tagged release: `v1.0.0+1` (AAB + IPA attached). TestFlight upload is blocked because the App Store Connect app record does not exist yet.
 
 The repository has been taken from the runnable demo to signed iOS/Android
 artifacts, a complete release audit, store assets/metadata, legal drafts, CI and
@@ -41,17 +45,18 @@ Release artifacts:
 
 ## Exact blockers
 
-1. **AppGallery signing** — Huawei-issued `.p12` / `.cer` / `.p7b` and profile
+1. **App Store Connect app record** — create `tech.zhongbei.jellycube3d` in App Store Connect; TestFlight upload returned `No suitable application records were found`.
+2. **AppGallery signing** — Huawei-issued `.p12` / `.cer` / `.p7b` and profile
    password. The current HAP is unsigned; local test signing is not accepted by
    AppGallery.
-2. **Store console access / IAP products** — App Store Connect, Play Console and
+3. **Store console access / IAP products** — App Store Connect, Play Console and
    AGC app records; Play App Signing enrollment; `extra_types` product creation;
    sandbox purchase/restore.
-3. **Git remote / secrets** — no remote is configured, so the tag release
+4. **Git remote / secrets** — no remote is configured, so the tag release
    workflow and CI have not actually run.
-4. **Physical QA** — no physical iPhone/iPad, Android or HarmonyOS devices were
+5. **Physical QA** — no physical iPhone/iPad, Android or HarmonyOS devices were
    available; simulator/emulator smoke only.
-5. **Legal identity / hosting** — `[LEGAL ENTITY]` placeholder and final
+6. **Legal identity / hosting** — `[LEGAL ENTITY]` placeholder and final
    `https://zhongbei.tech/jellycube3d/...` hosting are not deployed.
 
 ## Required to unblock
