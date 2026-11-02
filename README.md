@@ -14,6 +14,7 @@ The images in [`screenshots`](screenshots) are documentation only; they are not 
 
 ## Release package
 
+- [Objective status](GOAL_STATUS.md)
 - [Release readiness audit](RELEASE_READINESS.md)
 - [Release runbook](RELEASE.md) (including tag-driven GitHub Release)
 - [Decisions](DECISIONS.md)
