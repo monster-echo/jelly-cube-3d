@@ -1,7 +1,7 @@
 # HarmonyOS Spike Report — Flutter-OHOS
 
 Date: 2026-11-02
-Status: **Host integrated; compilation/tests pass; runtime not yet signed/verified**
+Status: **Host integrated; compile/tests pass; runtime verified on the OpenHarmony emulator; store signing pending**
 Target: HarmonyOS NEXT / OpenHarmony 7 (API 26)
 
 ## Toolchain found on this machine
@@ -46,7 +46,9 @@ Important: without `DEVECO_SDK_HOME`, hvigor fails with:
 - Device types are now `phone`, `tablet`, and `2in1`.
 - No ArkTS host exists yet for `tech.zhongbei/jellycube3d_audio`; audio will silently degrade on OHOS until implemented.
 - Haptics require verification against the OHOS platform channel / vibrator.
-- HAP is unsigned; it cannot be installed on the emulator until a Jelly Cube 3D Harmony signing profile is created.
+- The unsigned HAP installs and launches on the OpenHarmony 7 emulator (`hdc install`), which is useful for runtime QA. A signed HAP is still required for AppGallery.
+- Runtime verified: launch, custom icon/launch window, 3×3 jelly render, drag turn, tool bar, hint/toast and responsive phone layout. Screenshots are in `store/huawei/screenshots/phone`.
+- Not yet verified: signed install, audio, haptics, shader path, tablet/split-screen, IAP.
 - **Local path restriction:** hvigor rejects an apostrophe in the project path. This checkout is `/Users/echo/workspace/Rubik's Jelly`; use `scripts/build-release.sh harmony` (which stages to `/tmp`) or a CI checkout path without `'`.
 - A signed runtime test is still required for:
   - app launch and rendering
@@ -68,7 +70,7 @@ Blockers before AppGallery submission:
 2. ~~Remove `ohos.permission.INTERNET`; add the correct device types.~~ Done.
 3. Add ArkTS audio host for the existing PCM channel.
 4. Add Harmony signing profile and signed HAP build.
-5. Verify on a signed device/emulator.
+5. Verify on a signed device/emulator (unsigned emulator launch already passes).
 6. Add AppGallery IAP Kit support if 5×5/6×6 are sold on HarmonyOS.
 7. Run AppGallery QA and prepare store metadata.
 

@@ -65,12 +65,40 @@ build_ios() {
     --export-method="$APPLE_EXPORT_METHOD" \
     --obfuscate --split-debug-info="$OUT/symbols/ios"
   local ipa
-  ipa="$(find build/ios/ipa -name '*.ipa' -maxdepth 1 | head -1 || true)"
+  ipa="$(find build/ios/ipa -name '*.ipa' -maxdepth 1 2>/dev/null | head -1 || true)"
   if [[ -z "$ipa" ]]; then
-    echo "BLOCKED: Flutter did not produce an IPA." >&2
-    return 5
+    # Xcode 27.1 + openrsync fails IDEDistributionCreateIPAStep with
+    # "--extended-attributes: unknown option". The distribution pipeline has
+    # already re-signed the app at this point, so recover that signed payload
+    # and zip a valid IPA ourselves.
+    echo "Flutter export produced no IPA; recovering Xcode distribution pipeline…"
+    local pipeline=""
+    pipeline="$(ls -dt "${TMPDIR:-/tmp}"/XcodeDistPipeline.* 2>/dev/null | head -1 || true)"
+    if [[ -n "$pipeline" && -d "$pipeline/Root/Payload/Runner.app" ]]; then
+      local app="$pipeline/Root/Payload/Runner.app"
+      local cs
+      cs="$(codesign -dv --verbose=4 "$app" 2>&1 || true)"
+      if grep -q 'Authority=Apple Distribution' <<<"$cs"; then
+        if security cms -D -i "$app/embedded.mobileprovision" 2>/dev/null             | plutil -extract Entitlements.get-task-allow raw - 2>/dev/null             | grep -q '^false$'; then
+          /usr/bin/ditto -c -k --sequesterRsrc --keepParent             "$pipeline/Root/Payload" "$OUT/jelly-cube-3d.ipa"
+          ipa="$OUT/jelly-cube-3d.ipa"
+          echo "Recovered distribution-signed IPA from $pipeline"
+        else
+          echo "BLOCKED: recovered app does not use an App Store profile." >&2
+          return 5
+        fi
+      else
+        echo "BLOCKED: recovered app is not Apple Distribution-signed." >&2
+        return 5
+      fi
+    else
+      echo "BLOCKED: Flutter did not produce an IPA and no distribution pipeline was found." >&2
+      return 5
+    fi
   fi
-  cp "$ipa" "$OUT/jelly-cube-3d.ipa"
+  if [[ "$ipa" != "$OUT/jelly-cube-3d.ipa" ]]; then
+    cp "$ipa" "$OUT/jelly-cube-3d.ipa"
+  fi
   (cd "$OUT" && shasum -a 256 jelly-cube-3d.ipa > jelly-cube-3d.ipa.sha256)
   echo "IPA: $OUT/jelly-cube-3d.ipa"
 }

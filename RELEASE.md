@@ -22,6 +22,11 @@ No command in this repository uploads or publishes to a store. The final submiss
 cp release.env.example release.env   # fill non-secret values
 # signing files must be outside the repo / in keychain / CI secrets
 
+# Xcode 27.1 note: Flutter's IPA export can fail at
+# IDEDistributionCreateIPAStep because openrsync rejects
+# --extended-attributes. build-release.sh recovers the
+# already-distribution-signed pipeline payload and zips the IPA.
+
 ./scripts/build-release.sh android
 ./scripts/build-release.sh ios
 ./scripts/build-release.sh harmony

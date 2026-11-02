@@ -27,7 +27,7 @@ The original findings below are preserved as audit evidence. This pass has alrea
 | Legal / support | missing | `docs/PRIVACY.md`, `TERMS.md`, `SUPPORT.md` + in-app About entry |
 | Store copy / assets | missing | English/Chinese listing drafts, icons, Play feature graphic, screenshot requirements |
 | Release scripts | missing | `scripts/build-release.sh`, `scripts/verify-release.sh`, CI workflow skeleton |
-| HarmonyOS | not investigated | `ohos/` host integrated; Flutter-OHOS compile/test/HAP passed; see `docs/HARMONY_SPIKE.md` |
+| HarmonyOS | not investigated | `ohos/` host integrated; Flutter-OHOS compile/tests/HAP passed; unsigned HAP runs on the OpenHarmony 7 emulator; see `docs/HARMONY_SPIKE.md` |
 | Git baseline | local only | Git repository initialized on `main`; no remote yet |
 | Android signing | ready locally | **app-specific 4096-bit upload key generated and AAB/APK signed** |
 | Store screenshots | missing | Apple 6.9/6.5/iPad 13 and Google phone/tablet sets captured |
@@ -37,7 +37,6 @@ The original findings below are preserved as audit evidence. This pass has alrea
 Running `scripts/verify-release.sh` now reports:
 
 ```text
-FAIL iOS archive is not Apple Distribution-signed / IPA missing
 FAIL HarmonyOS HAP is unsigned
 ```
 
@@ -48,7 +47,7 @@ Plus work not yet represented by the verifier:
 - App Store Connect, Play Console and AppGallery Connect app records are not created/verified.
 - Huawei/Apple/Google app-specific signing material is not present.
 - Store consoles, age ratings, privacy/data-safety answers and review notes are drafts only.
-- HarmonyOS host is committed and a HAP compiles from a sanitized path, but the HAP is unsigned and ArkTS audio/haptics are not verified.
+- HarmonyOS host is committed; unsigned HAP installs and runs on the OpenHarmony 7 emulator (launch, drag/turn, tool bar). A signed HAP for AppGallery and ArkTS audio/haptics remain open.
 - Mainland China is out of v1 scope; no software copyright/APP filing/game approval work has been started.
 - A local Git repository now exists on `main`; a remote and CI execution are still open.
 

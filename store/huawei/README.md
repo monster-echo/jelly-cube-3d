@@ -2,6 +2,8 @@
 
 Status: **PREPARATION / NOT SUBMITTED**
 
+Runtime: unsigned HAP installs and runs on the OpenHarmony 7 emulator (launch + drag/turn). Screenshots are in `screenshots/phone`. Signed HAP and IAP Kit remain open.
+
 ## Identifiers
 
 - App name: Jelly Cube 3D

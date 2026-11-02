@@ -36,26 +36,51 @@ need store/google/icon-512.png "Google Play 512 icon exists"
 need store/google/feature-graphic-1024x500.png "Google feature graphic exists"
 
 note "== iOS =="
-if [[ -d build/ios/archive/Runner.xcarchive ]]; then
-  APP="build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app"
-  if [[ -d "$APP" ]]; then
+IPA="$(find build/release build/ios/ipa -name '*.ipa' -maxdepth 3 2>/dev/null | head -1 || true)"
+if [[ -n "$IPA" ]]; then
+  TMP_IPA="$(mktemp -d)"
+  if unzip -q "$IPA" -d "$TMP_IPA" 2>/dev/null; then
+    APP="$TMP_IPA/Payload/Runner.app"
     plist="$APP/Info.plist"
-    [[ "$(plutil -extract CFBundleIdentifier raw "$plist" 2>/dev/null)" == "$EXPECTED_PACKAGE" ]] && ok "Bundle ID" || bad "Bundle ID mismatch"
-    [[ "$(plutil -extract CFBundleShortVersionString raw "$plist" 2>/dev/null)" == "1.0.0" ]] && ok "Version 1.0.0" || bad "Version mismatch"
-    [[ "$(plutil -extract ITSAppUsesNonExemptEncryption raw "$plist" 2>/dev/null)" == "false" ]] && ok "Encryption declaration" || bad "Missing export compliance"
-    [[ -f "$APP/PrivacyInfo.xcprivacy" ]] && ok "App privacy manifest in bundle" || bad "App privacy manifest not in bundle"
-    if codesign -dv "$APP" 2>&1 | grep -q 'Authority=Apple Distribution'; then
-      ok "Apple Distribution-signed archive"
+    [[ "$(plutil -extract CFBundleIdentifier raw "$plist" 2>/dev/null)" == "$EXPECTED_PACKAGE" ]] && ok "Bundle ID (IPA)" || bad "IPA bundle ID mismatch"
+    [[ "$(plutil -extract ITSAppUsesNonExemptEncryption raw "$plist" 2>/dev/null)" == "false" ]] && ok "Encryption declaration (IPA)" || bad "IPA missing export compliance"
+    [[ -f "$APP/PrivacyInfo.xcprivacy" ]] && ok "App privacy manifest in IPA" || bad "App privacy manifest not in IPA"
+    CS_OUT="$(codesign -dv --verbose=4 "$APP" 2>&1 || true)"
+    if grep -q 'Authority=Apple Distribution' <<<"$CS_OUT"; then
+      ok "Apple Distribution-signed IPA"
     else
-      bad "Archive is not Apple Distribution-signed"
+      bad "IPA is not Apple Distribution-signed"
+    fi
+    if [[ -f "$APP/embedded.mobileprovision" ]]; then
+      if security cms -D -i "$APP/embedded.mobileprovision" 2>/dev/null | plutil -extract Entitlements.get-task-allow raw - 2>/dev/null | grep -q '^false$'; then
+        ok "App Store provisioning profile (get-task-allow=false)"
+      else
+        bad "IPA does not use an App Store distribution profile"
+      fi
+    else
+      bad "IPA has no embedded provisioning profile"
     fi
   else
-    bad "iOS app not found in archive"
+    bad "IPA could not be unpacked"
   fi
+  rm -rf "$TMP_IPA"
+elif [[ -d build/ios/archive/Runner.xcarchive ]]; then
+  APP="build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app"
+  plist="$APP/Info.plist"
+  [[ "$(plutil -extract CFBundleIdentifier raw "$plist" 2>/dev/null)" == "$EXPECTED_PACKAGE" ]] && ok "Bundle ID (archive)" || bad "Bundle ID mismatch"
+  [[ "$(plutil -extract CFBundleShortVersionString raw "$plist" 2>/dev/null)" == "1.0.0" ]] && ok "Version 1.0.0" || bad "Version mismatch"
+  [[ "$(plutil -extract ITSAppUsesNonExemptEncryption raw "$plist" 2>/dev/null)" == "false" ]] && ok "Encryption declaration (archive)" || bad "Missing export compliance"
+  [[ -f "$APP/PrivacyInfo.xcprivacy" ]] && ok "App privacy manifest (archive)" || bad "App privacy manifest not in archive"
+  CS_OUT="$(codesign -dv --verbose=4 "$APP" 2>&1 || true)"
+  if grep -q 'Authority=Apple Distribution' <<<"$CS_OUT"; then
+    ok "Apple Distribution-signed archive"
+  else
+    bad "Archive is not Apple Distribution-signed"
+  fi
+  bad "IPA missing"
 else
   bad "iOS archive missing"
 fi
-if find build/ios/ipa -name '*.ipa' -maxdepth 1 2>/dev/null | grep -q .; then ok "IPA exists"; else bad "IPA missing"; fi
 
 note "== Android =="
 APK="build/app/outputs/flutter-apk/app-release.apk"

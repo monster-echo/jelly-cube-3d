@@ -19,8 +19,9 @@ Do not commit any private key, keystore, certificate, provisioning profile, API 
 ### Signing
 
 - [x] Apple Distribution identity exists in the keychain
-- [ ] App Store provisioning profile for `tech.zhongbei.jellycube3d` (not present)
-- [ ] App Store Connect app record
+- [x] App Store distribution provisioning profile for `tech.zhongbei.jellycube3d` (created by Xcode automatic signing)
+- [x] Distribution-signed IPA built locally
+- [ ] App Store Connect app record / upload verified in the console
 - [ ] App Store Connect API key for CI (Issuer ID + Key ID + `.p8`)
 - [ ] Team ID confirmed: `2VA9TC6SG4`
 - [ ] Xcode archive + export tested with the production profile

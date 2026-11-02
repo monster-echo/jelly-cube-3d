@@ -20,10 +20,22 @@ Audit date: 2026-11-02
 | CanvasKit web release build | PASS |
 | Wasm web release build | PASS |
 | Android release AAB build | PASS (app-specific upload signing) |
-| iOS archive | PASS (Apple Development signed; no App Store IPA) |
+| iOS distribution IPA | PASS (Apple Distribution signed; not uploaded) |
 | HarmonyOS HAP compile | PASS (unsigned, sanitized path, IAP dependencies included) |
 | 5×5/6×6 shell/controller paths | PASS |
 | IAP locked/unlocked UI compile | PASS |
+
+## Runtime smoke results (simulators/emulators)
+
+| Target | Result |
+| --- | --- |
+| iPhone 18 Pro simulator (iOS 27) | Launch PASS; responsive phone layout; 5-size locked selector renders |
+| iPad Pro 11-inch simulator (iOS 27) | Launch PASS; tablet card and 5-size selector render |
+| Android emulator 1080×2400 | Signed release APK installs and launches |
+| OpenHarmony 7 emulator 1280×2832 | Unsigned HAP installs and launches; drag turn + tool bar PASS |
+
+Not covered by this smoke test: physical devices, sandbox purchase, StoreKit sheet,
+audio, haptics, rotation/split-screen, signed Harmony HAP.
 
 ## Required real-device matrix
 
@@ -32,7 +44,7 @@ Audit date: 2026-11-02
 - [ ] iPad (portrait, landscape, Split View / Slide Over)
 - [ ] Android phone (60/120 Hz)
 - [ ] Android tablet / foldable
-- [ ] HarmonyOS phone
+- [x] HarmonyOS phone (OpenHarmony 7 emulator, unsigned HAP: launch + drag/tool bar)
 - [ ] HarmonyOS tablet
 - [ ] Low-memory / low-end Android
 
@@ -49,15 +61,15 @@ Audit date: 2026-11-02
 - [ ] VoiceOver / TalkBack pass
 - [ ] text scaling at 1.2×/1.3×
 - [ ] offline launch (gameplay)
-- [ ] IAP sandbox: buy, cancel, pending, restore, reinstall
+- [ ] IAP sandbox: buy, cancel, pending, restore, reinstall (client UI exists; store products pending)
 - [ ] upgrade install over previous build
 - [ ] store review screenshot audit
 
 ## Known blockers
 
-- iOS archive is Apple Development-signed; no App Store distribution IPA.
+- App Store upload/console verification is still pending (local distribution IPA exists).
 - Play App Signing enrollment / Play Console app record pending (local upload key exists).
-- No signed HarmonyOS HAP.
+- HarmonyOS unsigned HAP runs on the emulator; signed HAP still required for AppGallery.
 - Store products and sandbox purchase/restore testing are still pending; Huawei IAP Kit is not implemented.
-- AppGallery screenshots still need a signed Harmony device capture.
+- AppGallery screenshots captured from the OpenHarmony 7 emulator; replace if the console requires a different resolution.
 - No real-device QA executed in this audit.

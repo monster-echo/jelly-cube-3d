@@ -13,7 +13,8 @@ This directory contains store-facing material only. It is not bundled into the a
 | Google feature graphic | `store/google/feature-graphic-1024x500.png` |
 | Apple screenshots | Captured: 6.9" (1320×2868, incl. extra-types sheet), 6.5" (1242×2688), iPad 13" (2064×2752) |
 | Google screenshots | Captured: phone 1080×1920, tablet 1440×2560 |
-| AppGallery screenshots | **Pending signed Harmony device capture** |
+| AppGallery screenshots | Captured from OpenHarmony 7 emulator (1280×2832); signed-device recapture optional |
+| Runtime smoke | iOS phone/iPad simulator, Android emulator, OpenHarmony 7 emulator launch PASS |
 | Store copy | `store/listing-en.md`, `store/listing-zh-Hans.md` |
 | Privacy policy | `docs/PRIVACY.md` |
 | Support | `docs/SUPPORT.md` |
