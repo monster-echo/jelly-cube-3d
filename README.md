@@ -15,7 +15,7 @@ The images in [`screenshots`](screenshots) are documentation only; they are not 
 ## Release package
 
 - [Release readiness audit](RELEASE_READINESS.md)
-- [Release runbook](RELEASE.md)
+- [Release runbook](RELEASE.md) (including tag-driven GitHub Release)
 - [Decisions](DECISIONS.md)
 - [Accounts and signing checklist](ACCOUNTS_AND_SIGNING.md)
 - [IAP plan](docs/IAP.md)

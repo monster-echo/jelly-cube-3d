@@ -46,6 +46,23 @@ Artifacts land under `build/release/<version>+<build>/`:
 
 Publish `store/site/jellycube3d/` at the final `https://zhongbei.tech/jellycube3d/` paths, replace `[LEGAL ENTITY]`, and verify the URLs before store submission. See `store/site/README.md`.
 
+## 1b. Tag-driven GitHub Release
+
+Push a `v*` tag to trigger the full build and GitHub Release:
+
+```bash
+git tag -a v1.0.0+1 -m "Jelly Cube 3D v1.0.0+1"
+git push origin main --tags
+```
+
+The workflow builds Android, iOS and HarmonyOS artifacts, then creates a GitHub
+Release named `Jelly Cube 3D <tag>` and attaches the AAB/IPA/HAP plus SHA-256
+files. All three platform jobs must pass; the Harmony job uses the self-hosted
+runner.
+
+This publishes **GitHub artifacts only**. It never uploads to App Store Connect,
+Google Play or AppGallery. Those remain manual, human-approved steps.
+
 ## 2. Apple App Store
 
 1. Create the App Store Connect app record for `tech.zhongbei.jellycube3d`.
