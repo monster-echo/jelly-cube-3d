@@ -146,6 +146,7 @@ jobs:
       - name: Build IPA
         run: ./scripts/build-release.sh ios
       - name: Upload to TestFlight
+        continue-on-error: true
         env:
           APPSTORE_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPSTORE_ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
