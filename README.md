@@ -128,7 +128,7 @@ A 22-test suite currently covers:
 
 - Flutter Web: CanvasKit and Wasm release builds.
 - iOS: unsigned simulator archive; a signed distribution IPA is still blocked on an app-specific App Store profile.
-- Android: release AAB builds; currently debug-signed until the upload keystore and Play App Signing are configured.
+- Android: release AAB/APK builds signed with the app-specific upload key; Play App Signing enrollment is pending.
 - HarmonyOS: Flutter-OHOS 3.41.10 HAP compiles from `ohos/` in a sanitized path; the HAP is unsigned and signed-device verification is still pending.
 - macOS: debug app builds for local inspection only; Mac App Store is out of scope.
 

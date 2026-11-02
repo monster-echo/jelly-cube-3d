@@ -27,16 +27,17 @@ The original findings below are preserved as audit evidence. This pass has alrea
 | Legal / support | missing | `docs/PRIVACY.md`, `TERMS.md`, `SUPPORT.md` + in-app About entry |
 | Store copy / assets | missing | English/Chinese listing drafts, icons, Play feature graphic, screenshot requirements |
 | Release scripts | missing | `scripts/build-release.sh`, `scripts/verify-release.sh`, CI workflow skeleton |
-| HarmonyOS | not investigated | Flutter-OHOS compile/test/HAP spike passed; see `docs/HARMONY_SPIKE.md` |
+| HarmonyOS | not investigated | `ohos/` host integrated; Flutter-OHOS compile/test/HAP passed; see `docs/HARMONY_SPIKE.md` |
+| Git baseline | missing | local Git repository initialized on `main`; no remote yet |
+| Android signing | debug | **app-specific 4096-bit upload key generated and AAB/APK signed** |
+| Store screenshots | missing | Apple 6.9/6.5/iPad 13 and Google phone/tablet sets captured |
 
 ### Current blockers after this pass
 
 Running `scripts/verify-release.sh` now reports:
 
 ```text
-FAIL Not a Git repository
 FAIL iOS archive is not codesigned / IPA missing
-FAIL Android APK is debug-signed
 FAIL HarmonyOS HAP is unsigned
 ```
 

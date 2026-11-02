@@ -19,7 +19,7 @@ Audit date: 2026-11-02
 | Audio PCM finite/bounded | PASS |
 | CanvasKit web release build | PASS |
 | Wasm web release build | PASS |
-| Android release AAB build | PASS (debug signed) |
+| Android release AAB build | PASS (app-specific upload signing) |
 | iOS unsigned archive | PASS (not signed/no IPA) |
 | HarmonyOS HAP compile | PASS (unsigned, sanitized path) |
 
@@ -54,7 +54,7 @@ Audit date: 2026-11-02
 ## Known blockers
 
 - No signed iOS IPA.
-- No production Android signing.
+- Play App Signing enrollment / Play Console app record pending (local upload key exists).
 - No signed HarmonyOS HAP.
 - No IAP implementation yet.
 - No exact store-size screenshot set.

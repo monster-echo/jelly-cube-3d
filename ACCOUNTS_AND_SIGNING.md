@@ -46,11 +46,16 @@ Do not commit any private key, keystore, certificate, provisioning profile, API 
 
 ### Signing
 
-- [ ] New upload keystore generated specifically for Jelly Cube 3D
-- [ ] `android/key.properties` configured locally (gitignored)
-- [ ] Keystore + passwords stored in CI secrets
-- [ ] Upload certificate SHA-256 recorded
-- [ ] Signed AAB verified with `apksigner` / Play Console
+- [x] New upload keystore generated specifically for Jelly Cube 3D
+  - Path: `~/workspace/keys/jelly-cube-3d-upload.jks` (outside repo)
+  - Alias: `jelly-cube-3d`
+  - Certificate SHA-256: `348812004cde1844965c85cd60d8f62e57d3ecb15513088125fa515ab7877a96`
+  - Password: `~/workspace/keys/jelly-cube-3d-upload-password.txt` (600)
+- [x] `android/key.properties` configured locally (gitignored)
+- [x] Signed AAB/APK verified with `apksigner`
+- [ ] Back up the keystore + password in a secure password manager
+- [ ] Register the upload key in Play Console / enroll Play App Signing
+- [ ] Store keystore + passwords in CI secrets
 
 Do **not** reuse the Pindou upload key. Create a new key for this product.
 
