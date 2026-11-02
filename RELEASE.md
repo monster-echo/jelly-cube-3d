@@ -64,6 +64,23 @@ artifacts and the missing HAP is visible in the failed job.
 This publishes **GitHub artifacts only**. It never uploads to App Store Connect,
 Google Play or AppGallery. Those remain manual, human-approved steps.
 
+Required Actions secrets:
+
+| Secret | Purpose |
+| --- | --- |
+| `RELEASE_ENV` | Contents of `release.env` (non-secret identifiers + tool paths) |
+| `ANDROID_KEYSTORE_BASE64` | Base64 of the app-specific upload `.jks` |
+| `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_PASSWORD` | Keystore/key passwords |
+| `ANDROID_KEY_ALIAS` | `jelly-cube-3d` |
+| `APPLE_DISTRIBUTION_CERT_P12` | Base64 of the Apple Distribution `.p12` |
+| `APPLE_DISTRIBUTION_CERT_PASSWORD` | `.p12` password |
+| `APPLE_PROVISIONING_PROFILE` | Base64 of the `tech.zhongbei.jellycube3d` App Store profile |
+| `HARMONY_DEVECO_SDK_HOME` | DevEco SDK path on the self-hosted Harmony runner |
+| `FLUTTER_OHOS` | Flutter-OHOS binary path on the self-hosted Harmony runner |
+
+`GITHUB_TOKEN` is provided automatically; the workflow requests `contents: write`.
+The Harmony job requires a self-hosted runner with labels `macOS` and `harmony`.
+
 ## 2. Apple App Store
 
 1. Create the App Store Connect app record for `tech.zhongbei.jellycube3d`.
