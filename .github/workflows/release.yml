@@ -124,7 +124,7 @@ jobs:
           if-no-files-found: error
 
   harmony:
-    if: ${{ github.event_name == 'push' || inputs.platform == 'all' || inputs.platform == 'harmony' }}
+    if: ${{ vars.ENABLE_HARMONY == 'true' && (github.event_name == 'push' || inputs.platform == 'all' || inputs.platform == 'harmony') }}
     continue-on-error: true
     # DevEco Studio, the OpenHarmony SDK, and the Flutter-OHOS fork are not
     # present on GitHub-hosted runners. Use a trusted, access-controlled

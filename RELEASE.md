@@ -57,9 +57,10 @@ git push origin main --tags
 
 The workflow builds Android, iOS and HarmonyOS artifacts, then creates a GitHub
 Release named `Jelly Cube 3D <tag>` and attaches the AAB/IPA/HAP plus SHA-256
-files. Android and iOS must pass. The Harmony job uses the self-hosted runner;
-if it is unavailable, the GitHub Release is still created with the Android/iOS
-artifacts and the missing HAP is visible in the failed job.
+files. Android and iOS must pass. The Harmony job is gated by the repository variable `ENABLE_HARMONY`; set it
+to `true` only after the self-hosted runner and AppGallery signing profile are
+ready. If it is disabled/unavailable, the GitHub Release is still created with
+the Android/iOS artifacts.
 
 This publishes **GitHub artifacts only**. It never uploads to App Store Connect,
 Google Play or AppGallery. Those remain manual, human-approved steps.
