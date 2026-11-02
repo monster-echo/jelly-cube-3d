@@ -57,7 +57,7 @@ Artifacts land under `build/release/<version>+<build>/`:
 6. Test the IAP and Restore Purchases in TestFlight sandbox.
 7. Submit for review only after human sign-off.
 
-Reference copy: `store/listing-en.md`, `store/listing-zh-Hans.md`.
+Reference copy: `store/listing-en.md`, `store/listing-zh-Hans.md`; fastlane-style drafts are under `store/apple/metadata/` and `store/google/metadata/`.
 
 ## 3. Google Play
 

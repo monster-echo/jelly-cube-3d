@@ -44,10 +44,10 @@ FAIL HarmonyOS HAP is unsigned
 Plus work not yet represented by the verifier:
 
 - 5×5/6×6 IAP client is implemented; store product creation and sandbox purchase/restore testing are still required.
-- Store screenshot sets are captured; AppGallery screenshots are from the OpenHarmony emulator and may need a signed-device recapture.
+- Store screenshot sets are captured and validated by `tool/check_store_assets.py`; AppGallery screenshots are from the OpenHarmony emulator and may need a signed-device recapture.
 - App Store Connect upload/app record verification, Play Console app record/Play App Signing, and AGC app record are still open.
 - Apple Distribution profile + signed IPA exist locally; Android upload key + signed AAB/APK exist locally. Huawei AppGallery signing is still missing.
-- Store consoles, age ratings, privacy/data-safety answers and review notes are drafts only.
+- Store consoles, age ratings, privacy/data-safety answers and review notes are drafts only. Fastlane-compatible Apple/Google metadata is in `store/*/metadata/`.
 - HarmonyOS host is committed; unsigned HAP installs and runs on the OpenHarmony 7 emulator (launch, drag/turn, tool bar). A signed HAP for AppGallery and ArkTS audio/haptics remain open.
 - Huawei IAP Kit is not implemented; the AppGallery build hides paid 5×5/6×6 and offers 2×2–4×4 only.
 - Mainland China is out of v1 scope; no software copyright/APP filing/game approval work has been started.

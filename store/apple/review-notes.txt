@@ -1,0 +1,12 @@
+No login is required. Gameplay is offline. All cube sizes except 5×5/6×6 are available immediately.
+
+The non-consumable In-App Purchase is:
+tech.zhongbei.jellycube3d.extra_types — Extra Cube Types
+
+Please use a sandbox account to test:
+1. Tap 5×5 or 6×6 to open the Jelly Pass sheet.
+2. Purchase; 5×5/6×6 unlock immediately.
+3. Delete/reinstall, then use Restore Purchases on the same sheet.
+4. Cancel a purchase; content stays locked.
+
+No ads, analytics, or account system. Audio/haptics can be muted in-app.

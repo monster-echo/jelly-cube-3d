@@ -145,6 +145,11 @@ note "== Store assets =="
 for f in store/apple/icon-1024.png store/google/icon-512.png store/google/feature-graphic-1024x500.png store/listing-en.md docs/IAP.md ACCOUNTS_AND_SIGNING.md; do
   need "$f" "$f"
 done
+if python3 tool/check_store_assets.py >/dev/null 2>&1; then
+  ok "Store image sizes/metadata/trademark scan"
+else
+  bad "Store image sizes/metadata/trademark scan (run tool/check_store_assets.py)"
+fi
 
 echo
 if [[ "$FAILED" == "0" ]]; then
