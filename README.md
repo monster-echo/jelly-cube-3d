@@ -22,6 +22,7 @@ The images in [`screenshots`](screenshots) are documentation only; they are not 
 - [QA report](docs/QA_REPORT.md)
 - [Draft store answers](docs/STORE_ANSWERS.md)
 - [HarmonyOS spike report](docs/HARMONY_SPIKE.md)
+- [HarmonyOS local signed-HAP test](docs/HARMONY_LOCAL_SIGNING.md)
 - [Privacy policy](docs/PRIVACY.md), [Terms](docs/TERMS.md), [Support](docs/SUPPORT.md)
 - [Store asset workspace](store/README.md), [English listing](store/listing-en.md), [Chinese listing](store/listing-zh-Hans.md), [static legal site](store/site/README.md)
 - [Apple IAP setup](store/apple/iap-product.md), [Google IAP setup](store/google/iap-product.md), [Huawei IAP status](store/huawei/iap-product.md)
