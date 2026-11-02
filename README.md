@@ -23,7 +23,7 @@ The images in [`screenshots`](screenshots) are documentation only; they are not 
 - [Draft store answers](docs/STORE_ANSWERS.md)
 - [HarmonyOS spike report](docs/HARMONY_SPIKE.md)
 - [Privacy policy](docs/PRIVACY.md), [Terms](docs/TERMS.md), [Support](docs/SUPPORT.md)
-- [Store asset workspace](store/README.md), [English listing](store/listing-en.md), [Chinese listing](store/listing-zh-Hans.md)
+- [Store asset workspace](store/README.md), [English listing](store/listing-en.md), [Chinese listing](store/listing-zh-Hans.md), [static legal site](store/site/README.md)
 - [Apple IAP setup](store/apple/iap-product.md), [Google IAP setup](store/google/iap-product.md), [Huawei IAP status](store/huawei/iap-product.md)
 - [Build script](scripts/build-release.sh), [verification script](scripts/verify-release.sh), [CI tests](.github/workflows/ci.yml), [release workflow](.github/workflows/release.yml)
 

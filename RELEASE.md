@@ -42,6 +42,10 @@ Artifacts land under `build/release/<version>+<build>/`:
 - `jelly-cube-3d.hap`
 - SHA-256 files and symbol directories
 
+## 1a. Deploy legal/support pages
+
+Publish `store/site/jellycube3d/` at the final `https://zhongbei.tech/jellycube3d/` paths, replace `[LEGAL ENTITY]`, and verify the URLs before store submission. See `store/site/README.md`.
+
 ## 2. Apple App Store
 
 1. Create the App Store Connect app record for `tech.zhongbei.jellycube3d`.

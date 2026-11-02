@@ -22,3 +22,5 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: ./tool/test.sh
+      - run: pip install pillow
+      - run: python3 tool/check_store_assets.py

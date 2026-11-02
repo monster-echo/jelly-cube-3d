@@ -22,13 +22,17 @@ This directory contains store-facing material only. It is not bundled into the a
 | IAP implementation | Client implemented; store product/price and sandbox testing still required |
 | Exact screenshot sets | **NOT CAPTURED** |
 
+## Static legal site
+
+`site/jellycube3d/` contains deployable landing, privacy, terms and support pages for the `zhongbei.tech/jellycube3d/` URLs. Replace `[LEGAL ENTITY]` before publishing.
+
 ## Fastlane-compatible metadata
 
 - Apple: `apple/metadata/en-US/*.txt`, `apple/review-notes.txt`
 - Google: `google/metadata/en-US/*.txt`, `google/metadata/en-US/images/*`
 - Huawei: `huawei/listing-en.md`, `huawei/iap-product.md`
 
-These are drafts; no upload is performed by this repo.
+These are drafts; no upload is performed by this repo. Deploy `site/jellycube3d/` before submission.
 
 ## IAP setup sheets
 
