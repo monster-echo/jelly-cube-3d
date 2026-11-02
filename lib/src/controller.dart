@@ -267,6 +267,7 @@ class JellyCubeController extends ChangeNotifier {
   double get bodyRockRadians => _rock * math.pi / 180;
   String get audioBackend => _audio.backendName;
   bool get extraTypesUnlocked => _purchases.unlocked;
+  bool get extraTypesVisible => !const bool.fromEnvironment('HARMONY');
   String get extraTypesPrice => _purchases.price;
   String get extraTypesTitle => _purchases.title;
   String get extraTypesDescription => _purchases.description;

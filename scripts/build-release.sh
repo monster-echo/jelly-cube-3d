@@ -144,6 +144,7 @@ build_harmony() {
     DEVECO_SDK_HOME="$sdk" "$flutter_ohos" pub get >/dev/null
     DEVECO_SDK_HOME="$sdk" "$flutter_ohos" build hap --release \
       "${version_args[@]}" "${common_dart_defines[@]}" \
+      --dart-define=HARMONY=true \
       --obfuscate --split-debug-info="$OUT/symbols/ohos"
     local hap
     hap="$(find build/ohos/hap -name '*.hap' -maxdepth 1 | head -1 || true)"

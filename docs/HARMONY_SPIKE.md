@@ -45,9 +45,11 @@ Important: without `DEVECO_SDK_HOME`, hvigor fails with:
 - The generated template requested `ohos.permission.INTERNET`; it has been removed from the committed host.
 - Device types are now `phone`, `tablet`, and `2in1`.
 - No ArkTS host exists yet for `tech.zhongbei/jellycube3d_audio`; audio will silently degrade on OHOS until implemented.
+- The AppGallery release build uses `--dart-define=HARMONY=true` to hide the paid 5×5/6×6 selector, because Huawei IAP Kit is not implemented. v1 AppGallery is 2×2–4×4 only.
 - Haptics require verification against the OHOS platform channel / vibrator.
 - The unsigned HAP installs and launches on the OpenHarmony 7 emulator (`hdc install`), which is useful for runtime QA. A signed HAP is still required for AppGallery.
 - Runtime verified: launch, custom icon/launch window, 3×3 jelly render, drag turn, tool bar, hint/toast and responsive phone layout. Screenshots are in `store/huawei/screenshots/phone`.
+- Verified on the free-only HARMONY build: only 2×2/3×3/4×4 are shown; no dead paid lock.
 - Not yet verified: signed install, audio, haptics, shader path, tablet/split-screen, IAP.
 - **Local path restriction:** hvigor rejects an apostrophe in the project path. This checkout is `/Users/echo/workspace/Rubik's Jelly`; use `scripts/build-release.sh harmony` (which stages to `/tmp`) or a CI checkout path without `'`.
 - A signed runtime test is still required for:

@@ -58,7 +58,7 @@ Implemented in `lib/src/purchases.dart` and `lib/src/purchase_ui.dart`: product 
 ### HarmonyOS
 
 - Huawei IAP Kit (`@kit.IAPKit` / IAP Kit) via ArkTS.
-- If IAP is not launched on HarmonyOS v1, the paid sizes must be unavailable or free on that platform; do not ship a lock with no purchase path.
+- HarmonyOS v1 hides 5×5/6×6 via `--dart-define=HARMONY=true`; implement Huawei IAP Kit before advertising/showing paid types there.
 - Reuse the same content-entitlement model.
 
 ## Compliance

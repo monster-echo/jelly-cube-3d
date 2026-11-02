@@ -49,7 +49,7 @@ Plus work not yet represented by the verifier:
 - Apple Distribution profile + signed IPA exist locally; Android upload key + signed AAB/APK exist locally. Huawei AppGallery signing is still missing.
 - Store consoles, age ratings, privacy/data-safety answers and review notes are drafts only.
 - HarmonyOS host is committed; unsigned HAP installs and runs on the OpenHarmony 7 emulator (launch, drag/turn, tool bar). A signed HAP for AppGallery and ArkTS audio/haptics remain open.
-- Huawei IAP Kit is not implemented; paid cube types are unavailable on HarmonyOS until it is.
+- Huawei IAP Kit is not implemented; the AppGallery build hides paid 5×5/6×6 and offers 2×2–4×4 only.
 - Mainland China is out of v1 scope; no software copyright/APP filing/game approval work has been started.
 - A local Git repository now exists on `main`; a remote and CI execution are still open.
 - Physical-device QA is still pending; simulator/emulator smoke passed.

@@ -33,7 +33,7 @@ Audit date: 2026-11-02
 | iPhone 18 Pro simulator (iOS 27) | Launch PASS; responsive phone layout; 5-size locked selector renders |
 | iPad Pro 11-inch simulator (iOS 27) | Launch PASS; tablet card and 5-size selector render |
 | Android emulator 1080×2400 | Signed release APK installs and launches |
-| OpenHarmony 7 emulator 1280×2832 | Unsigned HAP installs and launches; drag turn + tool bar PASS |
+| OpenHarmony 7 emulator 1280×2832 | Unsigned HAP installs and launches; drag turn + tool bar PASS; HARMONY build hides 5×5/6×6 PASS |
 
 Not covered by this smoke test: physical devices, sandbox purchase, StoreKit sheet,
 audio, haptics, rotation/split-screen, signed Harmony HAP.

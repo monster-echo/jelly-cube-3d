@@ -947,6 +947,7 @@ class _ExpandedPanel extends StatelessWidget {
             size: controller.size,
             onChanged: controller.setSize,
             unlockedExtraTypes: controller.extraTypesUnlocked,
+            showExtraTypes: controller.extraTypesVisible,
             onLockedTap: () => showJellyUnlockSheet(context, controller),
           ),
           const SizedBox(height: 14),
@@ -1100,6 +1101,7 @@ class _TabletCard extends StatelessWidget {
                   size: controller.size,
                   onChanged: controller.setSize,
                   unlockedExtraTypes: controller.extraTypesUnlocked,
+                  showExtraTypes: controller.extraTypesVisible,
                   onLockedTap: () => showJellyUnlockSheet(context, controller),
                 ),
                 const SizedBox(height: 14),
@@ -1433,11 +1435,13 @@ class _SizeSegment extends StatelessWidget {
     required this.size,
     required this.onChanged,
     required this.unlockedExtraTypes,
+    required this.showExtraTypes,
     required this.onLockedTap,
   });
   final int size;
   final ValueChanged<int> onChanged;
   final bool unlockedExtraTypes;
+  final bool showExtraTypes;
   final VoidCallback onLockedTap;
 
   @override
@@ -1451,7 +1455,13 @@ class _SizeSegment extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          for (final n in <int>[2, 3, 4, 5, 6])
+          for (final n in <int>[
+            2,
+            3,
+            4,
+            if (showExtraTypes) 5,
+            if (showExtraTypes) 6,
+          ])
             Expanded(
               child: _SegmentButton(
                 label: '$n×$n',
