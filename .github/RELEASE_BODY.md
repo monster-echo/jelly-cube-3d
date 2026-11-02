@@ -4,7 +4,7 @@ This GitHub Release contains the signed release artifacts produced by the tag wo
 
 - Android App Bundle (`.aab`)
 - iOS App Store distribution IPA (`.ipa`)
-- HarmonyOS HAP (`.hap`), when the Harmony runner is available
+- HarmonyOS HAP (`.hap`), when the Harmony runner and signing profile are available
 - SHA-256 checksums for every artifact
 
 ## Important

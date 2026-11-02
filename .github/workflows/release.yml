@@ -122,6 +122,7 @@ jobs:
 
   harmony:
     if: ${{ github.event_name == 'push' || inputs.platform == 'all' || inputs.platform == 'harmony' }}
+    continue-on-error: true
     # DevEco Studio, the OpenHarmony SDK, and the Flutter-OHOS fork are not
     # present on GitHub-hosted runners. Use a trusted, access-controlled
     # self-hosted macOS runner with those tools installed.
@@ -152,7 +153,7 @@ jobs:
   github-release:
     name: Publish GitHub Release
     needs: [android, ios, harmony]
-    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+    if: ${{ always() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && needs.android.result == 'success' && needs.ios.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -168,6 +169,7 @@ jobs:
         with:
           name: harmony-release
           path: dist/harmony
+        continue-on-error: true
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -178,7 +180,7 @@ jobs:
             echo "Release $TAG already exists; refusing to overwrite." >&2
             exit 1
           fi
-          for ext in aab ipa hap; do
+          for ext in aab ipa; do
             find dist -type f -name "*.$ext" -print -quit | grep -q . || {
               echo "Missing .$ext artifact" >&2
               exit 1
