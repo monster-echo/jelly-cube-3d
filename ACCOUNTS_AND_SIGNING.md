@@ -86,17 +86,17 @@ Do **not** reuse the Pindou upload key. Create a new key for this product.
 - [ ] Private key (`.p12`) with password
 - [ ] `DEVECO_SDK_HOME` configured for CI
 - [ ] Signed `.app`/`.hap` tested on a HarmonyOS device
-- [ ] `hdc install` verification
+- [x] unsigned `hdc install` + launch verified on OpenHarmony 7 emulator
 
 ### Technical
 
-- [ ] `ohos/` project committed
+- [x] `ohos/` project committed
 - [ ] ArkTS audio channel implemented
-- [ ] `ohos.permission.INTERNET` removed unless a future feature needs it
-- [ ] `deviceTypes` includes phone + tablet/2-in-1
+- [x] `ohos.permission.INTERNET` removed
+- [x] `deviceTypes` includes phone + tablet/2-in-1
 - [ ] Shader fallback verified
 - [ ] Haptics permission/behavior verified
-- [ ] App icon, start window, app label replaced
+- [x] App icon, start window, app label replaced
 
 ## 4. Shared secrets policy
 
