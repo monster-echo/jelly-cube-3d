@@ -89,11 +89,11 @@ for path, limit in limits.items():
 for path in (
     "store/apple/metadata/en-US/privacy_url.txt",
     "store/apple/metadata/en-US/support_url.txt",
-    "store/apple/metadata/en-US/marketing_url.txt",
 ):
     p = ROOT / path
     if p.is_file() and not p.read_text().strip().startswith("https://"):
         errors.append(f"{path}: must be an https:// URL")
+# Marketing URL is optional in App Store Connect; empty is valid.
 
 class LocalLinks(HTMLParser):
     def __init__(self) -> None:
