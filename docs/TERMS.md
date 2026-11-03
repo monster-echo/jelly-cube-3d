@@ -35,4 +35,4 @@ The app is provided “as is” and “as available”, without warranties of an
 ## Contact
 
 **[LEGAL ENTITY]**  
-Email: **support@zhongbei.tech**
+Email: **hello@zhongbei.tech**

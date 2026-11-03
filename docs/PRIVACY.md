@@ -63,6 +63,6 @@ If the app later adds accounts, ads, analytics, cloud sync, or a developer serve
 ## Contact
 
 **[LEGAL ENTITY]**  
-Email: **support@zhongbei.tech**  
+Email: **hello@zhongbei.tech**  
 Support: https://zhongbei.tech/jellycube3d/support  
 Privacy: https://zhongbei.tech/jellycube3d/privacy

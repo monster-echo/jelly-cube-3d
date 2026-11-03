@@ -34,7 +34,7 @@ Check the mute switch and the in-app mute button. Haptics can be disabled in the
 
 ## Contact
 
-Email: **support@zhongbei.tech**  
+Email: **hello@zhongbei.tech**  
 Typical response: 2–3 business days.
 
 Please include:
