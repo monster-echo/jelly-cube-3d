@@ -76,3 +76,6 @@ ohos/entry/build/
 
 # Flutter crash logs
 flutter_*.log
+
+# Local extracted APK/IPA artifacts
+dist/

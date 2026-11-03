@@ -9,7 +9,7 @@ Audit date: 2026-11-02
 | Check | Result |
 | --- | --- |
 | `flutter analyze` | PASS |
-| `./tool/test.sh` | 30/30 PASS |
+| `./tool/test.sh` | 31/31 PASS |
 | 10,000-turn engine integrity | PASS |
 | 10,000 controller moves | PASS |
 | `(R U R' U') × 6` solved | PASS |
@@ -26,6 +26,7 @@ Audit date: 2026-11-02
 | IAP locked/unlocked UI compile | PASS |
 | IAP fake-platform purchase/restore/cancel tests | PASS (5 tests) |
 | Responsive layouts + 1.3× text scale | PASS (320/390/834/1024) |
+| Opposite touch drags commit opposite turns | PASS |
 
 ## Runtime smoke results (simulators/emulators)
 

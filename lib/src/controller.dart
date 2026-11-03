@@ -933,7 +933,10 @@ class JellyCubeController extends ChangeNotifier {
       1 => const V3(0, 1, 0),
       _ => const V3(0, 0, 1),
     };
-    final surface = axisVec.cross(centerWorld) * (intent.sign * 0.25);
+    // screenDirection must represent the POSITIVE rotation direction. The
+    // gesture's sign is applied by the dot product below; multiplying the
+    // surface by intent.sign would double-flip counter-clockwise drags.
+    final surface = axisVec.cross(centerWorld) * 0.25;
     final p0 = projection.project(centerWorld);
     final p1 = projection.project(centerWorld + surface);
     var dir = p1 - p0;
