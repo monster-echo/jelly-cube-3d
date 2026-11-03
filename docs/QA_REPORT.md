@@ -70,7 +70,7 @@ audio, haptics, rotation/split-screen, signed Harmony HAP.
 
 ## Known blockers
 
-- App Store upload/console verification is still pending (local distribution IPA exists).
+- App Store TestFlight upload succeeded for `v1.0.1+3`; review submission and IAP product setup remain manual.
 - Play App Signing enrollment / Play Console app record pending (local upload key exists).
 - HarmonyOS unsigned HAP runs on the emulator; signed HAP still required for AppGallery.
 - Store products and sandbox purchase/restore testing are still pending; Huawei IAP Kit is not implemented.

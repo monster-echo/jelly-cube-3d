@@ -1,6 +1,6 @@
 # Jelly Cube 3D — Objective Status
 
-**Status: BLOCKED ON STORE APP RECORDS / FINAL ACCOUNTS — NOT STORE-SUBMITTED**
+**Status: APP STORE BUILD UPLOADED TO TESTFLIGHT — REVIEW/IAP AND OTHER STORES PENDING**
 
 GitHub repository: `monster-echo/jelly-cube-3d`
 
@@ -45,7 +45,7 @@ Release artifacts:
 
 ## Exact blockers
 
-1. **App Store Connect app record** — create `tech.zhongbei.jellycube3d` in App Store Connect; TestFlight upload returned `No suitable application records were found`.
+1. **App Store IAP product** — create/verify `tech.zhongbei.jellycube3d.extra_types` and price; TestFlight build is uploaded, but the paid content has no configured product yet.
 2. **AppGallery signing** — Huawei-issued `.p12` / `.cer` / `.p7b` and profile
    password. The current HAP is unsigned; local test signing is not accepted by
    AppGallery.
