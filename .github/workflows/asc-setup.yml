@@ -1,0 +1,21 @@
+name: asc-setup
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install pyjwt cryptography
+      - name: Write key
+        run: printf '%s' "${{ secrets.APPLE_API_PRIVATE_KEY }}" | tr -d '\r' > asc_key.p8
+      - name: Run ASC setup
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_API_PRIVATE_KEY_PATH: asc_key.p8
+        run: python3 scripts/asc_jelly_setup.py
