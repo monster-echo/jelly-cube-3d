@@ -4,7 +4,7 @@
 
 GitHub repository: `monster-echo/jelly-cube-3d`
 
-Tagged release: `v1.0.0+1` (AAB + IPA attached). TestFlight upload is blocked because the App Store Connect app record does not exist yet.
+Next release: `v1.0.1+2` (includes the counter-clockwise drag fix). The previous `v1.0.0+1` release contains the old gesture bug and should not be used for TestFlight/store submission. TestFlight upload is blocked because the App Store Connect app record does not exist yet.
 
 The repository has been taken from the runnable demo to signed iOS/Android
 artifacts, a complete release audit, store assets/metadata, legal drafts, CI and
