@@ -126,3 +126,51 @@ class JellyPalette {
     decoration: TextDecoration.none,
   );
 }
+
+// ---------------------------------------------------------------- dark skin
+/// Global ambient skin switch, updated by the app root whenever the platform
+/// brightness changes. Every helper below reads it so the dozens of glass
+/// surfaces across the UI can flip between light and dark without each call
+/// site needing its own MediaQuery lookup.
+class JellySkin {
+  JellySkin._();
+  static Brightness brightness = Brightness.light;
+  static bool get dark => brightness == Brightness.dark;
+}
+
+/// Glass panel fill. Light: white translucency on the lilac studio. Dark:
+/// plum translucency, slightly more opaque for readability.
+Color jellyGlass(double alpha) => JellySkin.dark
+    ? Color.fromRGBO(74, 47, 76, (0.42 + alpha * 0.42).clamp(0.0, 0.92))
+    : Colors.white.withValues(alpha: alpha);
+
+/// Glass edge / hairline. Light: white. Dark: a faint rose-light stroke so
+/// dark panels still read as glossy sheets rather than holes.
+Color jellyGlassEdge(double alpha) => JellySkin.dark
+    ? Color.fromRGBO(255, 231, 244, (alpha * 0.30).clamp(0.0, 1.0))
+    : Colors.white.withValues(alpha: alpha);
+
+Color jellyInk() =>
+    JellySkin.dark ? const Color(0xFFF3E9F5) : JellyPalette.ink;
+Color jellyInkSoft() =>
+    JellySkin.dark ? const Color(0xFFC9B9CE) : JellyPalette.inkSoft;
+Color jellyInkFaint() =>
+    JellySkin.dark ? const Color(0xFF9D8DA4) : JellyPalette.inkFaint;
+Color jellyStudioMid() =>
+    JellySkin.dark ? const Color(0xFF241227) : JellyPalette.studioMid;
+
+/// Studio field colors for the painter: deep plum in dark mode so the candy
+/// cube keeps its contrast instead of floating on a bright wall.
+Color jellyStudioTop() =>
+    JellySkin.dark ? const Color(0xFF2E1A32) : JellyPalette.studioTop;
+Color jellyStudioBottom() =>
+    JellySkin.dark ? const Color(0xFF1A0C1E) : JellyPalette.studioBottom;
+
+TextStyle jellyLabel() =>
+    JellySkin.dark ? JellyPalette.label.copyWith(color: jellyInk()) : JellyPalette.label;
+TextStyle jellyBody() => JellySkin.dark
+    ? JellyPalette.body.copyWith(color: jellyInkSoft())
+    : JellyPalette.body;
+TextStyle jellyMonoSmall() => JellySkin.dark
+    ? JellyPalette.monoSmall.copyWith(color: jellyInkFaint())
+    : JellyPalette.monoSmall;

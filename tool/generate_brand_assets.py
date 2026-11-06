@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFilter, ImageOps, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 S = 2048
@@ -25,6 +25,14 @@ BLUSH = (246, 221, 232)
 LIME_LIGHT = (190, 246, 124)
 LIME = (119, 216, 60)
 LIME_DEEP = (55, 139, 29)
+LEMON = (255, 212, 46)
+TANGERINE = (255, 122, 18)
+BLUEBERRY = (49, 87, 216)
+# Icon background: the same lilac studio field the game renders in, so the
+# icon, the sheets and the store art read as one product.
+ICON_BG_TOP = (238, 229, 247)
+ICON_BG_MID = (222, 210, 238)
+ICON_BG_BOTTOM = (205, 190, 225)
 CHERRY_LIGHT = (255, 118, 138)
 CHERRY = (213, 31, 61)
 CHERRY_DEEP = (142, 8, 33)
@@ -117,8 +125,16 @@ def make_cube(size=2048, transparent=False, mono=False, cube_scale=1.0):
     # Coordinates for a chunky 3x3 jelly cube, centered.
     cx = size // 2
     scale = size / 2048.0 * cube_scale
+    # Cube geometry in source units spans y=350 (apex) to y=1950 (bottom),
+    # i.e. 1600 tall with its midpoint at 1150. Anchor that midpoint at the
+    # canvas center so the mark is optically centered (HIG: keep the symbol
+    # centered and inside the safe area; Material: 66/108 safe zone).
+    # cube_scale 1.0 => cube occupies ~78% of the canvas height.
     def p(x, y):
-        return (int(cx + (x - 1024) * scale), int((y - 930) * scale + size * 0.47))
+        return (
+            int(cx + (x - 1024) * scale),
+            int((y - 1150) * scale + size * 0.5),
+        )
 
     apex = p(1024, 350)
     lu = p(360, 750)
@@ -138,38 +154,49 @@ def make_cube(size=2048, transparent=False, mono=False, cube_scale=1.0):
     right_u = ((mid[0] - ru[0]) / 3, (mid[1] - ru[1]) / 3)
     right_v = ((rb[0] - ru[0]) / 3, (rb[1] - ru[1]) / 3)
 
+    # One vivid flavor per face plus a single off-sticker: reads as a real
+    # puzzle one move from solved, instead of three flat color slabs.
     top_tiles = [
-        [COCONUT, COCONUT, COCONUT],
-        [COCONUT, COCONUT, COCONUT],
-        [COCONUT, COCONUT, COCONUT],
+        [LEMON, LEMON, LEMON],
+        [LEMON, TANGERINE, LEMON],
+        [LEMON, LEMON, LEMON],
     ]
     left_tiles = [
         [LIME, LIME, LIME],
         [LIME, LIME, LIME],
-        [LIME, LIME, LIME],
+        [LIME, LIME, BLUEBERRY],
     ]
     right_tiles = [
         [CHERRY, CHERRY, CHERRY],
         [CHERRY, CHERRY, CHERRY],
-        [CHERRY, CHERRY, CHERRY],
+        [CHERRY, CHERRY, COCONUT],
     ]
 
     if transparent:
         canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     else:
-        canvas = vertical_gradient((size, size), LILAC_TOP, LILAC_BOTTOM).convert("RGBA")
-        canvas = Image.alpha_composite(canvas, radial_glow((size, size), CREAM, 150))
-        blush = radial_glow((size // 2, size // 2), BLUSH, 170)
-        canvas.alpha_composite(blush, (size // 3, size // 3))
+        canvas = vertical_gradient((size, size), ICON_BG_TOP, ICON_BG_BOTTOM).convert("RGBA")
+        # Blush and cream blooms give the lilac field a soft, edible glow
+        # instead of a flat studio wall.
+        canvas = Image.alpha_composite(canvas, radial_glow((size, size), BLUSH, 150))
+        bloom = radial_glow((int(size * 0.78), int(size * 0.78)), CREAM, 170)
+        canvas.alpha_composite(bloom, (int(size * 0.08), int(size * 0.06)))
 
     if not mono:
         shadow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
         sd = ImageDraw.Draw(shadow)
+        # A wide, soft plum contact shadow: the cube floats, it is not pasted.
+        sy = size * (0.5 + 400 * scale / size)
         sd.ellipse(
-            (int(cx - 650 * scale), int(size * 0.855), int(cx + 650 * scale), int(size * 0.895)),
-            fill=(68, 38, 62, 76),
+            (
+                int(cx - 660 * scale),
+                int(sy + 10 * scale),
+                int(cx + 660 * scale),
+                int(sy + 120 * scale),
+            ),
+            fill=(92, 58, 92, 120),
         )
-        shadow = shadow.filter(ImageFilter.GaussianBlur(44 * scale))
+        shadow = shadow.filter(ImageFilter.GaussianBlur(58 * scale))
         canvas = Image.alpha_composite(canvas, shadow)
 
     cube = Image.new("RGBA", (size, size), (0, 0, 0, 0))
@@ -184,12 +211,32 @@ def make_cube(size=2048, transparent=False, mono=False, cube_scale=1.0):
             for col in range(3):
                 poly = _tile_poly(origin, uvec, vvec, col, row)
                 color = tiles[row][col]
-                dc.polygon(poly, fill=color + (255,), outline=(255, 255, 255, 190), width=max(2, int(3 * scale)))
+                xs = [pt[0] for pt in poly]
+                ys = [pt[1] for pt in poly]
+                x0, y0, x1, y1 = min(xs), min(ys), max(xs), max(ys)
+                # Jelly volume: each sticker is lit at its top edge and sinks
+                # into a deeper tone at the bottom, the way translucent gum
+                # picks up light. Painted before the mask is applied.
+                if x1 - x0 > 2 and y1 - y0 > 2:
+                    light = lerp(color, (255, 255, 255), 0.46)
+                    deep = lerp(color, (70, 40, 80), 0.18)
+                    grad = vertical_gradient((int(x1 - x0), int(y1 - y0)), light, color)
+                    grad = Image.blend(
+                        grad,
+                        vertical_gradient((int(x1 - x0), int(y1 - y0)), color, deep),
+                        0.42,
+                    )
+                    tm = Image.new("L", (int(x1 - x0), int(y1 - y0)), 0)
+                    ImageDraw.Draw(tm).polygon(
+                        [(pt[0] - x0, pt[1] - y0) for pt in poly], fill=255
+                    )
+                    cube.paste(grad.convert("RGBA"), (int(x0), int(y0)), tm)
+                dc.polygon(poly, outline=(255, 255, 255, 205), width=max(2, int(3 * scale)))
                 # Top bevel and bottom shade.
                 top_edge = [poly[0], poly[1]]
-                dc.line(top_edge, fill=(255, 255, 255, 130), width=max(2, int(4 * scale)))
+                dc.line(top_edge, fill=(255, 255, 255, 170), width=max(2, int(5 * scale)))
                 bottom_edge = [poly[2], poly[3]]
-                dc.line(bottom_edge, fill=(120, 86, 114, 34), width=max(1, int(2 * scale)))
+                dc.line(bottom_edge, fill=(120, 86, 114, 40), width=max(1, int(2 * scale)))
 
     draw_face(top_origin, top_u, top_v, top_tiles)
     draw_face(left_origin, left_u, left_v, left_tiles)
@@ -207,14 +254,27 @@ def make_cube(size=2048, transparent=False, mono=False, cube_scale=1.0):
         layer.putalpha(Image.composite(alpha, Image.new("L", (size, size), 0), mask))
         return layer
 
-    # Volumetric shading: lit top, deeper lower faces.
-    cube = Image.alpha_composite(cube, shade_face([lu, mid, bottom, lb], (61, 31, 70), 70))
-    cube = Image.alpha_composite(cube, shade_face([ru, mid, bottom, rb], (61, 31, 70), 96))
-    cube = Image.alpha_composite(cube, shade_face([apex, ru, mid, lu], (255, 255, 255), 44, invert=True))
+    # Volumetric shading: lit top, gently deeper lower faces. Light alphas so
+    # the candy saturation stays edible rather than muddy.
+    cube = Image.alpha_composite(cube, shade_face([lu, mid, bottom, lb], (61, 31, 70), 46))
+    cube = Image.alpha_composite(cube, shade_face([ru, mid, bottom, rb], (61, 31, 70), 62))
+    cube = Image.alpha_composite(cube, shade_face([apex, ru, mid, lu], (255, 255, 255), 46, invert=True))
 
-    # Cross-face rim: crisp wet edges where the three faces meet.
-    for a, b in [(apex, lu), (apex, ru), (lu, mid), (ru, mid), (mid, bottom), (lu, lb), (ru, rb), (lb, bottom), (rb, bottom)]:
-        dc.line([a, b], fill=(255, 255, 255, 185), width=max(3, int(7 * scale)), joint="curve")
+    # Cross-face rim: crisp wet edges where the three faces meet. Two passes:
+    # a soft wide bloom then a thin bright core, so the seams read as glossy
+    # jelly shoulders instead of drawn outlines.
+    rim_edges = [
+        (apex, lu), (apex, ru), (lu, mid), (ru, mid), (mid, bottom),
+        (lu, lb), (ru, rb), (lb, bottom), (rb, bottom),
+    ]
+    rim_soft = Image.new("RGBA", (size, size), (255, 255, 255, 0))
+    rds = ImageDraw.Draw(rim_soft)
+    for a, b in rim_edges:
+        rds.line([a, b], fill=(255, 255, 255, 130), width=max(5, int(16 * scale)), joint="curve")
+    rim_soft = rim_soft.filter(ImageFilter.GaussianBlur(6 * scale))
+    cube = Image.alpha_composite(cube, rim_soft)
+    for a, b in rim_edges:
+        dc.line([a, b], fill=(255, 255, 255, 225), width=max(3, int(6 * scale)), joint="curve")
 
     # Soft rounded outer silhouette.
     cube_mask = Image.new("L", (size, size), 0)
@@ -228,31 +288,51 @@ def make_cube(size=2048, transparent=False, mono=False, cube_scale=1.0):
     if not mono:
         gloss = Image.new("RGBA", (size, size), (255, 255, 255, 0))
         gd = ImageDraw.Draw(gloss)
-        # Soft wet bloom on the lit top facet plus two crisp speculars.
-        gd.ellipse((
-            int(cx - 500 * scale), int(size * 0.305),
-            int(cx + 160 * scale), int(size * 0.445),
-        ), fill=(255, 255, 255, 94))
-        gd.ellipse((
-            int(cx - 500 * scale), int(size * 0.55),
-            int(cx - 300 * scale), int(size * 0.67),
-        ), fill=(255, 255, 255, 34))
-        gd.ellipse((
-            int(cx - 205 * scale), int(size * 0.348),
-            int(cx - 170 * scale), int(size * 0.365),
-        ), fill=(255, 255, 255, 245))
-        gd.ellipse((
-            int(cx - 512 * scale), int(size * 0.585),
-            int(cx - 490 * scale), int(size * 0.598),
-        ), fill=(255, 255, 255, 185))
+
+        # Speculars are expressed in the cube's own source coordinates and
+        # transformed with the same anchor as p(), so they stay glued to the
+        # faces whatever cube_scale/centering is used.
+        def gp(x, y):
+            return (int(cx + (x - 1024) * scale), int((y - 1150) * scale + size * 0.5))
+
+        def gloss_ellipse(x0, y0, x1, y1, alpha):
+            a, b = gp(x0, y0), gp(x1, y1)
+            gd.ellipse((a[0], a[1], b[0], b[1]), fill=(255, 255, 255, alpha))
+
+        # Soft wet bloom on the lit top facet plus speculars. Jelly reads glossy
+    # mainly because the highlight is tight, bright and slightly offset from
+    # the light source rather than a matte wash.
+        gloss_ellipse(452, 386, 1290, 826, 150)
+        gloss_ellipse(486, 1100, 800, 1470, 60)
+        gloss_ellipse(776, 440, 884, 566, 252)
+        gloss_ellipse(498, 1086, 540, 1152, 205)
         gloss = gloss.filter(ImageFilter.GaussianBlur(20 * scale))
         gloss.putalpha(Image.composite(gloss.getchannel("A"), Image.new("L", (size, size), 0), cube_mask))
         canvas = Image.alpha_composite(canvas, gloss)
 
         rim = cube_mask.filter(ImageFilter.FIND_EDGES).filter(ImageFilter.GaussianBlur(1.2 * scale))
+        # On the light lilac field the silhouette needs a brighter halo to
+        # separate the gummy body from the wall behind it.
         rim_layer = Image.new("RGBA", (size, size), (255, 255, 255, 0))
-        rim_layer.putalpha(rim.point(lambda v: int(v * 110 / 255)))
+        rim_layer.putalpha(rim.point(lambda v: int(v * 175 / 255)))
         canvas = Image.alpha_composite(canvas, rim_layer)
+
+        # Subsurface scattering: light enters the jelly, scatters inside and
+        # leaks out warm and glowing along the lower/outer silhouette. This is
+        # what separates gummy candy from painted plastic, so it is layered
+        # inside the silhouette only.
+        sss = cube_mask.filter(ImageFilter.GaussianBlur(34 * scale))
+        sss = ImageChops.subtract(sss, cube_mask.filter(ImageFilter.GaussianBlur(7 * scale)))
+        sss = ImageChops.multiply(
+            sss, ImageOps.invert(cube_mask.filter(ImageFilter.GaussianBlur(2 * scale)))
+        )
+        inner = cube_mask.filter(ImageFilter.MinFilter(31)).filter(
+            ImageFilter.GaussianBlur(30 * scale)
+        )
+        glow_alpha = ImageChops.multiply(sss, inner).point(lambda v: int(v * 0.95))
+        sss_layer = Image.new("RGBA", (size, size), (255, 196, 214, 0))
+        sss_layer.putalpha(glow_alpha)
+        canvas = Image.alpha_composite(canvas, sss_layer)
 
     if mono:
         # A themed-icon silhouette: white tiles with transparent seams.
@@ -329,7 +409,7 @@ def make_feature_graphic():
 
 
 def main():
-    icon = make_cube(S, transparent=False)
+    icon = make_cube(S, transparent=False, cube_scale=0.74)
     save_rgb(icon, BRAND_DIR / "app_icon_1024.png", 1024)
     save_rgb(icon, BRAND_DIR / "play_icon_512.png", 512)
     save_rgba(make_cube(S, transparent=True, cube_scale=0.78), BRAND_DIR / "cube_foreground_1024.png", 1024)

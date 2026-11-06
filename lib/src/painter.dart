@@ -60,16 +60,17 @@ class JellyPainter extends CustomPainter {
   // --------------------------------------------------------------- backdrop
   void _paintBackdrop(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
+    final dark = JellySkin.dark;
     final bg = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: <Color>[
-          JellyPalette.studioTop,
-          JellyPalette.studioMid,
-          JellyPalette.studioBottom,
+          jellyStudioTop(),
+          jellyStudioMid(),
+          jellyStudioBottom(),
         ],
-        stops: <double>[0.0, 0.48, 1.0],
+        stops: const <double>[0.0, 0.48, 1.0],
       ).createShader(rect);
     canvas.drawRect(rect, bg);
 
@@ -78,8 +79,12 @@ class JellyPainter extends CustomPainter {
         center: const Alignment(0.72, -0.55),
         radius: 0.92,
         colors: <Color>[
-          JellyPalette.blush.withValues(alpha: 0.72),
-          JellyPalette.blush.withValues(alpha: 0.0),
+          (dark ? JellyPalette.berry : JellyPalette.blush).withValues(
+            alpha: dark ? 0.34 : 0.72,
+          ),
+          (dark ? JellyPalette.berry : JellyPalette.blush).withValues(
+            alpha: 0.0,
+          ),
         ],
       ).createShader(rect);
     canvas.drawRect(rect, blush);
@@ -89,8 +94,12 @@ class JellyPainter extends CustomPainter {
         center: const Alignment(-0.62, -0.74),
         radius: 0.72,
         colors: <Color>[
-          JellyPalette.cream.withValues(alpha: 0.68),
-          JellyPalette.cream.withValues(alpha: 0.0),
+          (dark ? JellyPalette.plum : JellyPalette.cream).withValues(
+            alpha: dark ? 0.40 : 0.68,
+          ),
+          (dark ? JellyPalette.plum : JellyPalette.cream).withValues(
+            alpha: 0.0,
+          ),
         ],
       ).createShader(rect);
     canvas.drawRect(rect, cream);
@@ -101,7 +110,7 @@ class JellyPainter extends CustomPainter {
         center: const Alignment(0.0, -0.10),
         radius: 0.60,
         colors: <Color>[
-          Colors.white.withValues(alpha: 0.34),
+          Colors.white.withValues(alpha: dark ? 0.10 : 0.34),
           Colors.white.withValues(alpha: 0.0),
         ],
       ).createShader(rect);
@@ -113,7 +122,7 @@ class JellyPainter extends CustomPainter {
         radius: 0.82,
         colors: <Color>[
           Colors.transparent,
-          JellyPalette.plum.withValues(alpha: 0.09),
+          JellyPalette.plum.withValues(alpha: dark ? 0.34 : 0.09),
         ],
         stops: const <double>[0.55, 1.0],
       ).createShader(rect);
@@ -398,9 +407,11 @@ class JellyPainter extends CustomPainter {
 
     final interactive = controller.interactiveTurn;
     if (interactive != null &&
-        !interactive.committed &&
         cubie.pos[interactive.axis] == interactive.coordinate) {
-      final rad = interactive.angle * math.pi / 180;
+      // visualAngle stays continuous across the 45-degree commit detent, so
+      // the slice keeps tracking the finger even after the engine state has
+      // absorbed the quarter turn.
+      final rad = interactive.visualAngle * math.pi / 180;
       final axis = _axisVector(interactive.axis);
       center = center.rotateAxis(axis, rad);
       orientation = _rotationMat(axis, rad) * orientation;

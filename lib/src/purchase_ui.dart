@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 import 'about.dart';
 import 'controller.dart';
@@ -45,7 +46,7 @@ class _UnlockSheet extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFFFBF7FD),
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.9)),
+              border: Border.all(color: jellyGlassEdge(0.9)),
               boxShadow: <BoxShadow>[
                 BoxShadow(
                   color: JellyPalette.plum.withValues(alpha: 0.22),
@@ -65,7 +66,7 @@ class _UnlockSheet extends StatelessWidget {
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 18),
                       decoration: BoxDecoration(
-                        color: JellyPalette.inkFaint.withValues(alpha: 0.32),
+                        color: jellyInkFaint().withValues(alpha: 0.32),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -96,7 +97,7 @@ class _UnlockSheet extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              unlocked ? 'EXTRA TYPES' : 'JELLY PASS',
+                              unlocked ? L.of(context).extraTypes : L.of(context).jellyPass,
                               style: JellyPalette.monoSmall.copyWith(
                                 fontSize: 7.5,
                                 letterSpacing: 1.8,
@@ -105,8 +106,8 @@ class _UnlockSheet extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               unlocked
-                                  ? 'More cube, more wobble.'
-                                  : 'Unlock 5×5 & 6×6',
+                                  ? L.of(context).moreCubeMoreWobble
+                                  : L.of(context).unlockTitle,
                               style: JellyPalette.displaySmall.copyWith(
                                 fontSize: 26,
                               ),
@@ -120,11 +121,11 @@ class _UnlockSheet extends StatelessWidget {
                   Text(
                     unlocked
                         ? 'Extra Cube Types is unlocked on this device. It restores on any device signed into the same store account.'
-                        : 'Two bigger cubes, one small unlock. 5×5 and 6×6 join the free 2×2, 3×3 and 4×4 sizes, with future extra types included.',
-                    style: JellyPalette.body.copyWith(
+                        : L.of(context).unlockBody,
+                    style: jellyBody().copyWith(
                       fontSize: 12.5,
                       height: 1.45,
-                      color: JellyPalette.inkSoft,
+                      color: jellyInkSoft(),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -165,7 +166,7 @@ class _UnlockSheet extends StatelessWidget {
                           )
                         else
                           Text(
-                            'OWNED',
+                            L.of(context).owned,
                             style: JellyPalette.monoSmall.copyWith(
                               fontSize: 7.5,
                               color: const Color(0xFF3F8735),
@@ -183,13 +184,13 @@ class _UnlockSheet extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 10),
                       child: Text(
                         controller.storeMessage!,
-                        style: JellyPalette.body.copyWith(
+                        style: jellyBody().copyWith(
                           fontSize: 11,
                           height: 1.35,
                           color:
                               controller.storeStatus == JellyStoreStatus.error
                               ? JellyPalette.berry
-                              : JellyPalette.inkSoft,
+                              : jellyInkSoft(),
                         ),
                       ),
                     ),
@@ -229,7 +230,7 @@ class _UnlockSheet extends StatelessWidget {
                             : controller.buyExtraTypes,
                         style: FilledButton.styleFrom(
                           backgroundColor: JellyPalette.plum,
-                          disabledBackgroundColor: JellyPalette.ink.withValues(
+                          disabledBackgroundColor: jellyInk().withValues(
                             alpha: 0.12,
                           ),
                         ),
@@ -246,8 +247,8 @@ class _UnlockSheet extends StatelessWidget {
                               )
                             : Text(
                                 controller.storeStatus == JellyStoreStatus.ready
-                                    ? 'Unlock for ${controller.extraTypesPrice}'
-                                    : 'Store unavailable',
+                                    ? L.of(context).unlockFor(controller.extraTypesPrice)
+                                    : L.of(context).storeUnavailable,
                               ),
                       ),
                     ),
@@ -258,18 +259,17 @@ class _UnlockSheet extends StatelessWidget {
                         child:
                             controller.storeStatus == JellyStoreStatus.restoring
                             ? const Text('Restoring…')
-                            : const Text('Restore Purchases'),
+                            : Text(L.of(context).restorePurchases),
                       ),
                     ),
                   ],
                   const SizedBox(height: 4),
                   Text(
-                    'One-time purchase. Payment is handled by the store. No subscription. '
-                    'Restore any time with the same store account.',
-                    style: JellyPalette.body.copyWith(
+                    '${L.of(context).oneTimeNote} ${L.of(context).restoreNote}',
+                    style: jellyBody().copyWith(
                       fontSize: 9.5,
                       height: 1.4,
-                      color: JellyPalette.inkFaint,
+                      color: jellyInkFaint(),
                     ),
                   ),
                   Align(
@@ -280,7 +280,7 @@ class _UnlockSheet extends StatelessWidget {
                         padding: EdgeInsets.zero,
                         minimumSize: const Size(48, 36),
                       ),
-                      child: const Text('Privacy & support'),
+                      child: Text(L.of(context).privacySupport),
                     ),
                   ),
                 ],

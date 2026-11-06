@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'audio.dart';
 import 'engine.dart';
@@ -10,6 +11,84 @@ import 'geometry.dart';
 import 'purchases.dart';
 
 enum JellyTool { twist, spin, poke, drop }
+
+/// Localizable strings the controller needs without a BuildContext (toasts,
+/// status label). Defaults are English; the app root refreshes them from the
+/// active locale via [JellyCubeController.updateTexts]. Templates use Dart
+/// interpolate-able {x} tokens kept as functions.
+class JellyText {
+  const JellyText({
+    required this.statusSolving,
+    required this.statusScrambling,
+    required this.statusMelting,
+    required this.statusTwisting,
+    required this.statusDropping,
+    required this.statusPoking,
+    required this.statusOrbiting,
+    required this.statusSolved,
+    required this.statusInPlay,
+    required this.toastFirstTwist,
+    required this.toastFirstFace,
+    required this.toastFirstLayer,
+    required this.toastTwoLayers,
+    required this.toastNothingToUndo,
+    required this.toastAlreadySolved,
+    required this.toastSolvePaused,
+    required this.toastReset,
+    required this.scrambledToast,
+    required this.solvedToast,
+    required this.sizeToast,
+  });
+
+  final String Function(int index, int total) statusSolving;
+  final String statusScrambling;
+  final String statusMelting;
+  final String statusTwisting;
+  final String statusDropping;
+  final String statusPoking;
+  final String statusOrbiting;
+  final String statusSolved;
+  final String statusInPlay;
+  final String toastFirstTwist;
+  final String toastFirstFace;
+  final String toastFirstLayer;
+  final String toastTwoLayers;
+  final String toastNothingToUndo;
+  final String toastAlreadySolved;
+  final String toastSolvePaused;
+  final String toastReset;
+  final String Function(int count) scrambledToast;
+  final String Function(String time, int moves) solvedToast;
+  final String Function(int n, int count) sizeToast;
+
+  static const JellyText en = JellyText(
+    statusSolving: _solvingEn,
+    statusScrambling: 'SCRAMBLING',
+    statusMelting: 'MELTING',
+    statusTwisting: 'TWISTING',
+    statusDropping: 'DROPPING',
+    statusPoking: 'POKING',
+    statusOrbiting: 'ORBITING',
+    statusSolved: 'SOLVED',
+    statusInPlay: 'IN PLAY',
+    toastFirstTwist: 'First twist',
+    toastFirstFace: 'First face!',
+    toastFirstLayer: 'First layer!',
+    toastTwoLayers: 'Two layers!',
+    toastNothingToUndo: 'Nothing to undo',
+    toastAlreadySolved: 'Already solved · poke it',
+    toastSolvePaused: 'Solve paused · your move',
+    toastReset: 'Reset · fresh from the fridge',
+    scrambledToast: _scrambledEn,
+    solvedToast: _solvedEn,
+    sizeToast: _sizeEn,
+  );
+
+  static String _solvingEn(int index, int total) => 'SOLVING $index / $total';
+  static String _scrambledEn(int count) => 'Scrambled · $count moves';
+  static String _solvedEn(String time, int moves) => 'Solved · $time · $moves moves';
+  static String _sizeEn(int n, int count) => '$n×$n · $count jellylets';
+}
 
 enum JellyPhase {
   ready,
@@ -67,8 +146,19 @@ class JellyInteractiveTurn {
   final JellyHit hit;
   final Offset dragOrigin;
   double angle;
-  bool committed = false;
-  int committedSign = 0;
+
+  /// Net quarter turns the engine has already absorbed during this drag.
+  /// Rolling detents advance it every time the finger crosses a 45 degree
+  /// midpoint, so one continuous gesture can spin a slice several quarter
+  /// turns while [angle] keeps following the finger without limit.
+  int committedTurns = 0;
+
+  /// Angle the renderer must draw on top of the engine state: the engine
+  /// already contains [committedTurns] quarter turns, so the drawable
+  /// remainder is the finger angle minus them. This stays inside +/-45 and
+  /// is continuous across every detent crossing.
+  double get visualAngle => angle - committedTurns * 90.0;
+
   double angularVelocity = 0;
   DateTime lastUpdate = DateTime.now();
 }
@@ -126,6 +216,54 @@ class JellyCubeController extends ChangeNotifier {
     notifyListeners();
   }
 
+  JellyText _text = JellyText.en;
+
+  void updateTexts({
+    required String Function(int, int) statusSolving,
+    required String statusScrambling,
+    required String statusMelting,
+    required String statusTwisting,
+    required String statusDropping,
+    required String statusPoking,
+    required String statusOrbiting,
+    required String statusSolved,
+    required String statusInPlay,
+    required String toastFirstTwist,
+    required String toastFirstFace,
+    required String toastFirstLayer,
+    required String toastTwoLayers,
+    required String toastNothingToUndo,
+    required String toastAlreadySolved,
+    required String toastSolvePaused,
+    required String toastReset,
+    required String Function(int) scrambledToast,
+    required String Function(String, int) solvedToast,
+    required String Function(int, int) sizeToast,
+  }) {
+    _text = JellyText(
+      statusSolving: statusSolving,
+      statusScrambling: statusScrambling,
+      statusMelting: statusMelting,
+      statusTwisting: statusTwisting,
+      statusDropping: statusDropping,
+      statusPoking: statusPoking,
+      statusOrbiting: statusOrbiting,
+      statusSolved: statusSolved,
+      statusInPlay: statusInPlay,
+      toastFirstTwist: toastFirstTwist,
+      toastFirstFace: toastFirstFace,
+      toastFirstLayer: toastFirstLayer,
+      toastTwoLayers: toastTwoLayers,
+      toastNothingToUndo: toastNothingToUndo,
+      toastAlreadySolved: toastAlreadySolved,
+      toastSolvePaused: toastSolvePaused,
+      toastReset: toastReset,
+      scrambledToast: scrambledToast,
+      solvedToast: solvedToast,
+      sizeToast: sizeToast,
+    );
+  }
+
   // ------------------------------------------------------------------ state
   late JellyCube _cube;
   int _size;
@@ -135,7 +273,7 @@ class JellyCubeController extends ChangeNotifier {
   double _softness = 0.68;
   double _speed = 1.0;
   bool _muted = false;
-  bool _haptics = true;
+  bool _haptics = false;
   bool _reducedMotion = false;
 
   final List<JellyMove> _history = <JellyMove>[];
@@ -275,6 +413,72 @@ class JellyCubeController extends ChangeNotifier {
   String? get storeMessage => _purchases.message;
 
   Future<void> loadCachedEntitlement() => _purchases.loadCached();
+
+  // ------------------------------------------------------------ persistence
+  static const String _kSize = 'jelly_cube_3d.settings.size';
+  static const String _kTool = 'jelly_cube_3d.settings.tool';
+  static const String _kSoftness = 'jelly_cube_3d.settings.softness';
+  static const String _kSpeed = 'jelly_cube_3d.settings.speed';
+  static const String _kVolume = 'jelly_cube_3d.settings.volume';
+  static const String _kMuted = 'jelly_cube_3d.settings.muted';
+  static const String _kHaptics = 'jelly_cube_3d.settings.haptics';
+  static const String _kCalm = 'jelly_cube_3d.settings.calm';
+  bool _settingsLoaded = false;
+
+  /// Restores user settings saved by [setSize] & friends. Call once after
+  /// [loadCachedEntitlement] so the extra-types gate is already known.
+  Future<void> loadSettings() async {
+    if (_settingsLoaded || _demoMode) return;
+    _settingsLoaded = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final size = prefs.getInt(_kSize);
+      if (size != null) {
+        final capped = _purchases.unlocked ? size.clamp(2, 6) : size.clamp(2, 3);
+        _size = capped;
+        _cube = JellyCube.solved(capped);
+      }
+      final toolIndex = prefs.getInt(_kTool);
+      if (toolIndex != null && toolIndex >= 0 && toolIndex < 4) {
+        _tool = JellyTool.values[toolIndex];
+      }
+      final softness = prefs.getDouble(_kSoftness);
+      if (softness != null) _softness = softness.clamp(0.0, 1.0);
+      final speed = prefs.getDouble(_kSpeed);
+      if (speed != null) _speed = speed.clamp(0.45, 1.8);
+      final volume = prefs.getDouble(_kVolume);
+      if (volume != null) _audio.volume = volume.clamp(0.0, 1.0);
+      final muted = prefs.getBool(_kMuted);
+      if (muted != null) {
+        _muted = muted;
+        _audio.enabled = !muted && !_demoMode;
+      }
+      final haptics = prefs.getBool(_kHaptics);
+      if (haptics != null) _haptics = haptics;
+      final calm = prefs.getBool(_kCalm);
+      if (calm != null) _reducedMotion = calm;
+      _dirty = true;
+      notifyListeners();
+    } catch (_) {
+      // Preferences are a convenience; a cold default is always playable.
+    }
+  }
+
+  Future<void> _persistSettings() async {
+    if (!_settingsLoaded || _demoMode) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_kSize, _size);
+      await prefs.setInt(_kTool, _tool.index);
+      await prefs.setDouble(_kSoftness, _softness);
+      await prefs.setDouble(_kSpeed, _speed);
+      await prefs.setDouble(_kVolume, _audio.volume);
+      await prefs.setBool(_kMuted, _muted);
+      await prefs.setBool(_kHaptics, _haptics);
+      await prefs.setBool(_kCalm, _reducedMotion);
+    } catch (_) {}
+  }
+
   Future<void> initializeStore() => _purchases.init();
   Future<void> buyExtraTypes() => _purchases.buy();
   Future<void> restorePurchases() => _purchases.restore();
@@ -306,21 +510,21 @@ class JellyCubeController extends ChangeNotifier {
   String get statusLabel {
     switch (phase) {
       case JellyPhase.solving:
-        return 'SOLVING $_solveIndex / $_solveTotal';
+        return _text.statusSolving(_solveIndex, _solveTotal);
       case JellyPhase.scrambling:
-        return 'SCRAMBLING';
+        return _text.statusScrambling;
       case JellyPhase.melting:
-        return 'MELTING';
+        return _text.statusMelting;
       case JellyPhase.twisting:
-        return 'TWISTING';
+        return _text.statusTwisting;
       case JellyPhase.dropping:
-        return 'DROPPING';
+        return _text.statusDropping;
       case JellyPhase.poking:
-        return 'POKING';
+        return _text.statusPoking;
       case JellyPhase.spinning:
-        return 'ORBITING';
+        return _text.statusOrbiting;
       case JellyPhase.ready:
-        return _cube.isSolved ? 'SOLVED' : 'IN PLAY';
+        return _cube.isSolved ? _text.statusSolved : _text.statusInPlay;
     }
   }
 
@@ -342,6 +546,7 @@ class JellyCubeController extends ChangeNotifier {
   void setReducedMotion(bool value) {
     if (_reducedMotion == value) return;
     _reducedMotion = value;
+    _persistSettings();
     notifyListeners();
   }
 
@@ -353,6 +558,7 @@ class JellyCubeController extends ChangeNotifier {
       unawaited(_audio.init());
       _play(JellySfx.snap, gain: 0.4);
     }
+    unawaited(_persistSettings());
     notifyListeners();
   }
 
@@ -360,16 +566,19 @@ class JellyCubeController extends ChangeNotifier {
 
   void setSoftness(double value) {
     _softness = value.clamp(0.0, 1.0);
+    unawaited(_persistSettings());
     notifyListeners();
   }
 
   void setSpeed(double value) {
     _speed = value.clamp(0.45, 1.8);
+    unawaited(_persistSettings());
     notifyListeners();
   }
 
   void setVolume(double value) {
     _audio.volume = value.clamp(0.0, 1.0);
+    unawaited(_persistSettings());
     notifyListeners();
   }
 
@@ -377,6 +586,7 @@ class JellyCubeController extends ChangeNotifier {
 
   void setHaptics(bool value) {
     _haptics = value;
+    unawaited(_persistSettings());
     notifyListeners();
   }
 
@@ -385,6 +595,7 @@ class JellyCubeController extends ChangeNotifier {
     _settleInteractive(preempt: true);
     _tool = value;
     _play(JellySfx.snap, gain: 0.28);
+    unawaited(_persistSettings());
     notifyListeners();
   }
 
@@ -393,8 +604,9 @@ class JellyCubeController extends ChangeNotifier {
     if (next == _size) return;
     _cancelAutomation(silent: true);
     _size = next;
+    unawaited(_persistSettings());
     reset(announce: false);
-    _showToast('${next}x$next · ${_cube.cubies.length} jellylets');
+    _showToast(_text.sizeToast(next, _cube.cubies.length));
   }
 
   void reset({bool announce = true}) {
@@ -442,7 +654,7 @@ class JellyCubeController extends ChangeNotifier {
       _play(JellySfx.bloop, gain: 0.45);
     }
     if (announce && !_demoMode) {
-      _showToast('Reset · fresh from the fridge');
+      _showToast(_text.toastReset);
     }
     _dirty = true;
     notifyListeners();
@@ -474,6 +686,7 @@ class JellyCubeController extends ChangeNotifier {
     bool user = false,
     bool animate = true,
     bool silent = false,
+    bool playTwist = true,
   }) {
     _cube.apply(move);
     if (record) {
@@ -485,7 +698,7 @@ class JellyCubeController extends ChangeNotifier {
       _spawnTurn(move, velocity: 0);
     }
     _rockVel -= move.quarterTurns.sign * (_reducedMotion ? 4.0 : 13.0);
-    if (!silent) {
+    if (!silent && playTwist) {
       _play(
         JellySfx.twist,
         gain: 0.55,
@@ -523,7 +736,7 @@ class JellyCubeController extends ChangeNotifier {
     if (_demoMode) return;
     _cancelAutomation(silent: true);
     if (_history.isEmpty) {
-      _showToast('Nothing to undo');
+      _showToast(_text.toastNothingToUndo);
       _haptic(HapticFeedback.selectionClick);
       return;
     }
@@ -547,22 +760,22 @@ class JellyCubeController extends ChangeNotifier {
     if (user && !silent) {
       if (!_firstTwistMilestone) {
         _firstTwistMilestone = true;
-        _showToast('First twist');
+        _showToast(_text.toastFirstTwist);
       } else if (!_firstFaceMilestone && solvedFaces >= 1) {
         _firstFaceMilestone = true;
-        _showToast('First face!');
+        _showToast(_text.toastFirstFace);
       } else if (!_firstLayerMilestone && solvedFaces >= 2) {
         _firstLayerMilestone = true;
-        _showToast('First layer!');
+        _showToast(_text.toastFirstLayer);
       } else if (!_twoLayerMilestone && solvedFaces >= 4) {
         _twoLayerMilestone = true;
-        _showToast('Two layers!');
+        _showToast(_text.toastTwoLayers);
       }
     }
 
     if (!_wasSolved && solved) {
       final elapsed = _scrambleElapsed();
-      _showToast('Solved · ${formatDuration(elapsed)} · $_moveCount moves');
+      _showToast(_text.solvedToast(formatDuration(elapsed), _moveCount));
       if (user &&
           _scrambled &&
           _manualMoves >= 8 &&
@@ -620,7 +833,7 @@ class JellyCubeController extends ChangeNotifier {
     if (token != _automationSerial || _disposed) return;
     _scrambling = false;
     _wasSolved = _cube.isSolved;
-    _showToast('Scrambled · ${moves.length} moves');
+    _showToast(_text.scrambledToast(moves.length));
     _haptic(HapticFeedback.mediumImpact);
     notifyListeners();
   }
@@ -630,7 +843,7 @@ class JellyCubeController extends ChangeNotifier {
     if (_demoMode) return;
     _cancelAutomation(silent: true);
     if (_cube.isSolved) {
-      _showToast('Already solved · poke it');
+      _showToast(_text.toastAlreadySolved);
       return;
     }
     _toast = null;
@@ -676,7 +889,7 @@ class JellyCubeController extends ChangeNotifier {
     _play(JellySfx.solve, gain: 0.9);
     _haptic(HapticFeedback.mediumImpact);
     _showToast(
-      'Solved · ${formatDuration(_scrambleElapsed())} · $_solveTotal moves',
+      _text.solvedToast(formatDuration(_scrambleElapsed()), _solveTotal),
     );
     notifyListeners();
   }
@@ -689,7 +902,7 @@ class JellyCubeController extends ChangeNotifier {
     _solveIndex = 0;
     _solveTotal = 0;
     if (wasSolving && !silent && !_demoMode) {
-      _showToast('Solve paused · your move');
+      _showToast(_text.toastSolvePaused);
     }
   }
 
@@ -756,11 +969,14 @@ class JellyCubeController extends ChangeNotifier {
       return;
     }
 
-    _haptic(HapticFeedback.selectionClick);
+    // Grab confirmation only when a finger actually lands on a sticker —
+    // orbit/poke/drop touches give their own event feedback instead of
+    // buzzing on every single touch.
     switch (_tool) {
       case JellyTool.twist:
         final hit = _pickHit(position);
         _pendingHit = hit;
+        if (hit != null) _haptic(HapticFeedback.selectionClick);
         seat.mode = hit == null ? 'spinPending' : 'twistPending';
         break;
       case JellyTool.spin:
@@ -959,7 +1175,9 @@ class JellyCubeController extends ChangeNotifier {
     _turnVelocity = 0;
     _pendingHit = hit;
     _orbiting = false;
-    _play(JellySfx.twist, gain: 0.28, rate: 1.15);
+    // No grab sound: the 0.62 s low-passed twist sample reads as a hum on
+    // every single gesture. The crisp detent snap below (per 90 degrees) is
+    // the only twist voice now.
   }
 
   void _updateInteractive(Offset position) {
@@ -970,7 +1188,9 @@ class JellyCubeController extends ChangeNotifier {
         (drag.dx * turn.screenDirection.dx +
             drag.dy * turn.screenDirection.dy) *
         turn.degreesPerPixel;
-    final clamped = angle.clamp(-155.0, 155.0);
+    // No interactive wall anymore: the safety bound below is far beyond any
+    // physical drag; rolling detents keep the visible residual small.
+    final clamped = angle.clamp(-1080.0, 1080.0);
     final now = DateTime.now();
     final dt = now.difference(_lastInteractiveTime).inMicroseconds / 1e6;
     if (dt > 1e-4) {
@@ -984,42 +1204,70 @@ class JellyCubeController extends ChangeNotifier {
     _lastInteractiveTime = now;
     turn.angle = clamped;
 
-    if (!turn.committed && clamped.abs() >= 45) {
-      _commitInteractiveTurn(turn);
+    // Rolling detents: each time the drag advances past a 45 degree
+    // midpoint the engine absorbs another quarter turn, so the finger can
+    // keep turning the slice indefinitely and the residual stays within
+    // +/-45 of the absorbed state.
+    while (turn.angle - turn.committedTurns * 90.0 >= 45) {
+      _commitInteractiveQuarter(turn, 1);
+    }
+    while (turn.angle - turn.committedTurns * 90.0 <= -45) {
+      _commitInteractiveQuarter(turn, -1);
     }
     _dirty = true;
     notifyListeners();
   }
 
-  void _commitInteractiveTurn(JellyInteractiveTurn turn) {
-    if (turn.committed) return;
-    turn.committed = true;
-    final sign = turn.angle.isNegative ? -1 : 1;
-    turn.committedSign = sign;
+  void _commitInteractiveQuarter(
+    JellyInteractiveTurn turn,
+    int delta, {
+    bool announce = true,
+  }) {
+    turn.committedTurns += delta;
     final move = JellyMove(
       axis: turn.axis,
       coordinates: <int>[turn.coordinate],
-      quarterTurns: sign,
+      quarterTurns: delta,
       notation: turn.notation,
     );
-    _commitMove(move, record: true, user: true, animate: false);
-    _haptic(HapticFeedback.mediumImpact);
-    _play(JellySfx.snap, gain: 0.52);
-    _rockVel -= sign * 9;
+    // The 0.62 s twist wash must not replay on every rolling detent of a
+    // continuous drag: the crisp snap below is the single detent voice.
+    _commitMove(
+      move,
+      record: true,
+      user: true,
+      animate: false,
+      playTwist: false,
+    );
+    if (announce) {
+      _haptic(HapticFeedback.mediumImpact);
+      // Speed-mapped click: slow precise turns land deep, fast flicks ring
+      // brighter — same sample, organically different every detent.
+      final speed = turn.angularVelocity.abs().clamp(0.0, 900.0);
+      _play(
+        JellySfx.snap,
+        gain: 0.42 + speed / 900.0 * 0.20,
+        rate: 0.90 + speed / 900.0 * 0.28,
+      );
+    }
+    _rockVel -= delta * 9;
   }
 
   void _spawnResidual(JellyInteractiveTurn turn) {
     _turns.clear();
-    final residual = turn.committed
-        ? turn.angle - turn.committedSign * 90.0
-        : turn.angle;
+    final residual = turn.angle - turn.committedTurns * 90.0;
     final anim = JellyTurnAnimation(
       axis: turn.axis,
       coordinates: <int>[turn.coordinate],
       angle: residual,
       velocity: turn.angularVelocity,
       notation: turn.notation,
-    );
+    )
+      // If the residual already sits inside the detent band the detent impact
+      // has just fired (or the drag never crossed it), so the settle spring
+      // must not re-buzz. Only a spring that starts beyond +/-45 crosses the
+      // bump and earns its own impact.
+      ..snapped = residual.abs() <= 45;
     _turns.add(anim);
     if (_turns.length > 14) _turns.removeAt(0);
   }
@@ -1027,10 +1275,21 @@ class JellyCubeController extends ChangeNotifier {
   void _releaseInteractive(Offset position) {
     final turn = _interactive;
     if (turn == null) return;
+    // Capture the velocity of the last real movement; the refresh below sees
+    // the finger already stationary and would zero it out.
+    final flickSpeed = _turnVelocity;
     _updateInteractive(position);
-    final flick = _turnVelocity.abs() > 170 && turn.angle.abs() > 28;
-    if (!turn.committed && (turn.angle.abs() >= 45 || flick)) {
-      _commitInteractiveTurn(turn);
+    final flick = flickSpeed.abs() > 170 && turn.angle.abs() > 28;
+    if (flick) {
+      // Throw the slice to the next detent beyond the finger position in
+      // the flick direction; flicking backwards cancels the last quarter.
+      final target = flickSpeed > 0
+          ? (turn.angle / 90).floor() + 1
+          : (turn.angle / 90).ceil() - 1;
+      final delta = target - turn.committedTurns;
+      if (delta != 0) {
+        _commitInteractiveQuarter(turn, delta, announce: false);
+      }
     }
     _spawnResidual(turn);
     _interactive = null;
@@ -1042,9 +1301,6 @@ class JellyCubeController extends ChangeNotifier {
   void _settleInteractive({required bool preempt}) {
     final turn = _interactive;
     if (turn == null) return;
-    if (!turn.committed && turn.angle.abs() >= 45) {
-      _commitInteractiveTurn(turn);
-    }
     _spawnResidual(turn);
     _interactive = null;
     _turnPointer = null;
@@ -1435,7 +1691,7 @@ class JellyCubeController extends ChangeNotifier {
           turn.previousVelocity * turn.velocity < 0 &&
           turn.angle.abs() > 2.0) {
         turn.overshootFired = true;
-        _haptic(HapticFeedback.lightImpact);
+        _haptic(HapticFeedback.selectionClick);
         _play(JellySfx.bloop, gain: 0.23);
       }
       if (turn.angle.abs() < 0.045 && turn.velocity.abs() < 0.32) {
@@ -1482,6 +1738,7 @@ class JellyCubeController extends ChangeNotifier {
           firstContact
               ? HapticFeedback.heavyImpact
               : HapticFeedback.lightImpact,
+          force: firstContact,
         );
         _play(
           JellySfx.drop,
@@ -1580,8 +1837,16 @@ class JellyCubeController extends ChangeNotifier {
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 
-  void _haptic(Future<void> Function() effect) {
+  DateTime _lastHapticAt = DateTime.fromMillisecondsSinceEpoch(0);
+
+  void _haptic(Future<void> Function() effect, {bool force = false}) {
     if (!_haptics || _demoMode) return;
+    final now = DateTime.now();
+    // Rate limit: two impacts landing within a few frames of each other read
+    // as one muddy buzz on iPhone. Heavy impacts (jelly drop landing) are the
+    // only events allowed to break through.
+    if (!force && now.difference(_lastHapticAt).inMilliseconds < 70) return;
+    _lastHapticAt = now;
     try {
       unawaited(effect().catchError((Object _) {}));
     } catch (_) {}

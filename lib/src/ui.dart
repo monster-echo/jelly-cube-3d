@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
+
 import 'controller.dart';
 import 'about.dart';
 import 'painter.dart';
@@ -333,13 +335,13 @@ class _BrandBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    'POKEABLE  ·  SPECIMEN 011',
+                    L.of(context).specimenLabel,
                     maxLines: 1,
                     overflow: TextOverflow.clip,
-                    style: JellyPalette.monoSmall.copyWith(
+                    style: jellyMonoSmall().copyWith(
                       fontSize: compact ? 7.8 : 9,
                       letterSpacing: compact ? 1.15 : 1.8,
-                      color: JellyPalette.inkSoft.withValues(alpha: 0.82),
+                      color: jellyInkSoft().withValues(alpha: 0.82),
                     ),
                   ),
                   SizedBox(height: compact ? 4 : 6),
@@ -380,7 +382,7 @@ class _BrandBar extends StatelessWidget {
               icon: controller.muted
                   ? Icons.volume_off_rounded
                   : Icons.volume_up_rounded,
-              label: controller.muted ? 'Unmute' : 'Mute',
+              label: controller.muted ? L.of(context).unmute : L.of(context).mute,
               onTap: controller.toggleMute,
               size: 48,
             ),
@@ -469,12 +471,12 @@ class _JellyMarkPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1
-        ..color = Colors.white.withValues(alpha: 0.65),
+        ..color = jellyGlass(0.65),
     );
     canvas.drawCircle(
       Offset(w * 0.42, w * 0.26),
       w * 0.035,
-      Paint()..color = Colors.white.withValues(alpha: 0.72),
+      Paint()..color = jellyGlass(0.72),
     );
   }
 
@@ -495,18 +497,18 @@ class _StatusPill extends StatelessWidget {
         ? JellyPalette.berry
         : (solved ? const Color(0xFF4D9A42) : const Color(0xFFD39B17));
     final label = controller.solving
-        ? 'SOLVING'
+        ? L.of(context).statusSolving
         : controller.scrambling
-        ? 'MIXING'
+        ? L.of(context).statusMixing
         : controller.statusLabel;
     return Container(
       height: 30,
       constraints: BoxConstraints(maxWidth: compact ? 90 : 150),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.48),
+        color: jellyGlass(0.48),
         borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.56)),
+        border: Border.all(color: jellyGlassEdge(0.56)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -529,10 +531,10 @@ class _StatusPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.fade,
               softWrap: false,
-              style: JellyPalette.monoSmall.copyWith(
+              style: jellyMonoSmall().copyWith(
                 fontSize: compact ? 7.4 : 8.6,
                 letterSpacing: compact ? 0.8 : 1.1,
-                color: JellyPalette.ink.withValues(alpha: 0.72),
+                color: jellyInk().withValues(alpha: 0.72),
               ),
             ),
           ),
@@ -586,7 +588,7 @@ class _ToastLayer extends StatelessWidget {
                   color: JellyPalette.plum.withValues(alpha: 0.90),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.20),
+                    color: jellyGlass(0.20),
                   ),
                   boxShadow: <BoxShadow>[
                     BoxShadow(
@@ -648,7 +650,7 @@ class _MeltBadge extends StatelessWidget {
               decoration: BoxDecoration(
                 color: JellyPalette.plum.withValues(alpha: 0.86),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                border: Border.all(color: jellyGlassEdge(0.18)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -663,16 +665,16 @@ class _MeltBadge extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       Text(
-                        'SOLVED BY HAND',
-                        style: JellyPalette.monoSmall.copyWith(
-                          color: Colors.white.withValues(alpha: 0.72),
+                        L.of(context).statusSolvedByHand,
+                        style: jellyMonoSmall().copyWith(
+                          color: jellyGlass(0.72),
                           fontSize: 7,
                           letterSpacing: 1.6,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'The jelly is impressed.',
+                        L.of(context).jellyImpressed,
                         style: JellyPalette.displaySmall.copyWith(
                           color: Colors.white,
                           fontSize: compact ? 13 : 15,
@@ -706,10 +708,10 @@ class _Hint extends StatelessWidget {
             !controller.demoMode &&
             !controller.meltBadge);
     final message = solving
-        ? 'SOLVING  ·  ${controller.solveIndex} / ${controller.solveTotal}'
+        ? L.of(context).solvingProgress(controller.solveIndex, controller.solveTotal)
         : (compact
-              ? 'DRAG A FACE  ·  TAP TO POKE'
-              : 'DRAG A FACE TO TWIST  ·  TAP TO POKE  ·  TWO FINGERS TO ORBIT');
+              ? L.of(context).hintDragPoke
+              : L.of(context).hintDragFull);
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 500),
       opacity: show ? 1 : 0,
@@ -731,12 +733,12 @@ class _Hint extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   message,
-                  style: JellyPalette.monoSmall.copyWith(
+                  style: jellyMonoSmall().copyWith(
                     fontSize: compact ? 7.4 : 8,
                     letterSpacing: compact ? 1.1 : 1.4,
                     color: solving
                         ? JellyPalette.berry.withValues(alpha: 0.92)
-                        : JellyPalette.inkSoft.withValues(alpha: 0.68),
+                        : jellyInkSoft().withValues(alpha: 0.68),
                   ),
                 ),
               ],
@@ -774,12 +776,12 @@ class _PhoneSheet extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: <Color>[
-                Colors.white.withValues(alpha: 0.84),
-                Colors.white.withValues(alpha: 0.66),
+                jellyGlass(0.84),
+                jellyGlass(0.66),
               ],
             ),
             border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.86)),
+              top: BorderSide(color: jellyGlassEdge(0.86)),
             ),
             boxShadow: <BoxShadow>[
               BoxShadow(
@@ -806,7 +808,7 @@ class _PhoneSheet extends StatelessWidget {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: JellyPalette.ink.withValues(alpha: 0.18),
+                        color: jellyInk().withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(99),
                       ),
                     ),
@@ -852,28 +854,28 @@ class _CollapsedBar extends StatelessWidget {
                     tool: JellyTool.twist,
                     selected: controller.tool == JellyTool.twist,
                     icon: Icons.rotate_right_rounded,
-                    label: 'Twist',
+                    label: L.of(context).toolTwist,
                     onTap: () => controller.setTool(JellyTool.twist),
                   ),
                   _ToolButton(
                     tool: JellyTool.spin,
                     selected: controller.tool == JellyTool.spin,
                     icon: Icons.threesixty_rounded,
-                    label: 'Spin',
+                    label: L.of(context).toolSpin,
                     onTap: () => controller.setTool(JellyTool.spin),
                   ),
                   _ToolButton(
                     tool: JellyTool.poke,
                     selected: controller.tool == JellyTool.poke,
                     icon: Icons.ads_click_rounded,
-                    label: 'Poke',
+                    label: L.of(context).toolPoke,
                     onTap: () => controller.setTool(JellyTool.poke),
                   ),
                   _ToolButton(
                     tool: JellyTool.drop,
                     selected: controller.tool == JellyTool.drop,
                     icon: Icons.arrow_downward_rounded,
-                    label: 'Drop',
+                    label: L.of(context).toolDrop,
                     onTap: () => controller.setTool(JellyTool.drop),
                   ),
                 ],
@@ -882,13 +884,13 @@ class _CollapsedBar extends StatelessWidget {
             const SizedBox(width: 8),
             _ActionIcon(
               icon: Icons.shuffle_rounded,
-              label: 'Scramble',
+              label: L.of(context).scramble,
               onTap: () => controller.scramble(),
             ),
             const SizedBox(width: 6),
             _ActionIcon(
               icon: Icons.auto_awesome_rounded,
-              label: 'Solve',
+              label: L.of(context).solve,
               filled: true,
               onTap: () => controller.solve(),
             ),
@@ -921,23 +923,23 @@ class _ExpandedPanel extends StatelessWidget {
           Row(
             children: <Widget>[
               Text(
-                'JELLY CONTROLS',
+                L.of(context).jellyControls,
                 style: JellyPalette.mono.copyWith(
                   fontSize: 9,
                   letterSpacing: 1.8,
-                  color: JellyPalette.inkSoft,
+                  color: jellyInkSoft(),
                 ),
               ),
               const Spacer(),
               _SmallTextButton(
                 icon: Icons.privacy_tip_outlined,
-                label: 'Privacy',
+                label: L.of(context).privacy,
                 onTap: () => showJellyAbout(context),
               ),
               const SizedBox(width: 4),
               _SmallTextButton(
                 icon: Icons.close_rounded,
-                label: 'Close',
+                label: L.of(context).close,
                 onTap: onCollapse,
               ),
             ],
@@ -952,23 +954,23 @@ class _ExpandedPanel extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _SliderRow(
-            label: 'Softness',
+            label: L.of(context).softness,
             valueLabel: '${(controller.softness * 100).round()}%',
             value: controller.softness,
             onChanged: controller.setSoftness,
             leftIcon: Icons.bubble_chart_rounded,
           ),
           _SliderRow(
-            label: 'Speed',
+            label: L.of(context).speed,
             valueLabel: '${controller.speed.toStringAsFixed(2)}×',
             value: (controller.speed - 0.45) / 1.35,
             onChanged: (v) => controller.setSpeed(0.45 + v * 1.35),
             leftIcon: Icons.speed_rounded,
           ),
           _SliderRow(
-            label: 'Sound',
+            label: L.of(context).sound,
             valueLabel: controller.muted
-                ? 'MUTED'
+                ? L.of(context).muted
                 : '${(controller.volume * 100).round()}%',
             value: controller.volume,
             onChanged: controller.setVolume,
@@ -981,8 +983,8 @@ class _ExpandedPanel extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: _ToggleTile(
-                  label: 'Haptics',
-                  subtitle: 'Snaps & squish',
+                  label: L.of(context).haptics,
+                  subtitle: L.of(context).hapticsSub,
                   value: controller.hapticsEnabled,
                   onChanged: controller.setHaptics,
                 ),
@@ -990,8 +992,8 @@ class _ExpandedPanel extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _ToggleTile(
-                  label: 'Calm mode',
-                  subtitle: 'Less wobble',
+                  label: L.of(context).calmMode,
+                  subtitle: L.of(context).lessWobble,
                   value: controller.reducedMotion,
                   onChanged: controller.setReducedMotion,
                 ),
@@ -1004,7 +1006,7 @@ class _ExpandedPanel extends StatelessWidget {
               Expanded(
                 child: _UtilityButton(
                   icon: Icons.undo_rounded,
-                  label: 'Undo',
+                  label: L.of(context).undo,
                   onTap: controller.undo,
                 ),
               ),
@@ -1012,7 +1014,7 @@ class _ExpandedPanel extends StatelessWidget {
               Expanded(
                 child: _UtilityButton(
                   icon: Icons.restart_alt_rounded,
-                  label: 'Reset',
+                  label: L.of(context).reset,
                   onTap: controller.reset,
                 ),
               ),
@@ -1020,7 +1022,7 @@ class _ExpandedPanel extends StatelessWidget {
               Expanded(
                 child: _UtilityButton(
                   icon: Icons.center_focus_strong_rounded,
-                  label: 'Center',
+                  label: L.of(context).center,
                   onTap: controller.centerCamera,
                 ),
               ),
@@ -1046,9 +1048,9 @@ class _TabletCard extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.56),
+            color: jellyGlass(0.56),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+            border: Border.all(color: jellyGlassEdge(0.72)),
             boxShadow: <BoxShadow>[
               BoxShadow(
                 color: JellyPalette.plum.withValues(alpha: 0.12),
@@ -1065,7 +1067,7 @@ class _TabletCard extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Text(
-                      'CONTROL STATION',
+                      L.of(context).controlStation,
                       style: JellyPalette.mono.copyWith(
                         fontSize: 8,
                         letterSpacing: 1.6,
@@ -1081,14 +1083,14 @@ class _TabletCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Jelly Lab',
+                  L.of(context).jellyLab,
                   style: JellyPalette.displaySmall.copyWith(fontSize: 26),
                 ),
                 if (!compact) ...<Widget>[
                   const SizedBox(height: 6),
                   Text(
-                    'A soft-body puzzle with a crisp, integer-perfect soul.',
-                    style: JellyPalette.body.copyWith(
+                    L.of(context).aboutDescription,
+                    style: jellyBody().copyWith(
                       fontSize: 11.5,
                       height: 1.4,
                     ),
@@ -1112,7 +1114,7 @@ class _TabletCard extends StatelessWidget {
                       Expanded(
                         child: _CardTool(
                           icon: Icons.rotate_right_rounded,
-                          label: 'Twist',
+                          label: L.of(context).toolTwist,
                           selected: controller.tool == JellyTool.twist,
                           onTap: () => controller.setTool(JellyTool.twist),
                         ),
@@ -1121,7 +1123,7 @@ class _TabletCard extends StatelessWidget {
                       Expanded(
                         child: _CardTool(
                           icon: Icons.threesixty_rounded,
-                          label: 'Spin',
+                          label: L.of(context).toolSpin,
                           selected: controller.tool == JellyTool.spin,
                           onTap: () => controller.setTool(JellyTool.spin),
                         ),
@@ -1130,7 +1132,7 @@ class _TabletCard extends StatelessWidget {
                       Expanded(
                         child: _CardTool(
                           icon: Icons.ads_click_rounded,
-                          label: 'Poke',
+                          label: L.of(context).toolPoke,
                           selected: controller.tool == JellyTool.poke,
                           onTap: () => controller.setTool(JellyTool.poke),
                         ),
@@ -1139,7 +1141,7 @@ class _TabletCard extends StatelessWidget {
                       Expanded(
                         child: _CardTool(
                           icon: Icons.arrow_downward_rounded,
-                          label: 'Drop',
+                          label: L.of(context).toolDrop,
                           selected: controller.tool == JellyTool.drop,
                           onTap: () => controller.setTool(JellyTool.drop),
                         ),
@@ -1153,7 +1155,7 @@ class _TabletCard extends StatelessWidget {
                     Expanded(
                       child: _CardAction(
                         icon: Icons.shuffle_rounded,
-                        label: 'Scramble',
+                        label: L.of(context).scramble,
                         onTap: () => controller.scramble(),
                       ),
                     ),
@@ -1161,7 +1163,7 @@ class _TabletCard extends StatelessWidget {
                     Expanded(
                       child: _CardAction(
                         icon: Icons.auto_awesome_rounded,
-                        label: 'Solve',
+                        label: L.of(context).solve,
                         filled: true,
                         onTap: () => controller.solve(),
                       ),
@@ -1170,30 +1172,30 @@ class _TabletCard extends StatelessWidget {
                 ),
                 if (!compact) ...<Widget>[
                   const SizedBox(height: 9),
-                  _MiniDivider(label: 'FLAVORS'),
+                  _MiniDivider(label: L.of(context).sectionFlavors),
                   const SizedBox(height: 4),
                   const _FlavorLegend(),
                 ],
                 const SizedBox(height: 8),
-                _MiniDivider(label: 'TEXTURE'),
+                _MiniDivider(label: L.of(context).sectionTexture),
                 _SliderRow(
-                  label: 'Softness',
+                  label: L.of(context).softness,
                   valueLabel: '${(controller.softness * 100).round()}%',
                   value: controller.softness,
                   onChanged: controller.setSoftness,
                   dense: true,
                 ),
                 _SliderRow(
-                  label: 'Speed',
+                  label: L.of(context).speed,
                   valueLabel: '${controller.speed.toStringAsFixed(2)}×',
                   value: (controller.speed - 0.45) / 1.35,
                   onChanged: (v) => controller.setSpeed(0.45 + v * 1.35),
                   dense: true,
                 ),
                 _SliderRow(
-                  label: 'Sound',
+                  label: L.of(context).sound,
                   valueLabel: controller.muted
-                      ? 'MUTED'
+                      ? L.of(context).muted
                       : '${(controller.volume * 100).round()}%',
                   value: controller.volume,
                   onChanged: controller.setVolume,
@@ -1204,8 +1206,8 @@ class _TabletCard extends StatelessWidget {
                   children: <Widget>[
                     Expanded(
                       child: _ToggleTile(
-                        label: 'Haptics',
-                        subtitle: 'Snaps',
+                        label: L.of(context).haptics,
+                        subtitle: L.of(context).hapticsSubShort,
                         value: controller.hapticsEnabled,
                         onChanged: controller.setHaptics,
                         dense: true,
@@ -1214,8 +1216,8 @@ class _TabletCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _ToggleTile(
-                        label: 'Calm',
-                        subtitle: 'Less wobble',
+                        label: L.of(context).calm,
+                        subtitle: L.of(context).lessWobble,
                         value: controller.reducedMotion,
                         onChanged: controller.setReducedMotion,
                         dense: true,
@@ -1229,7 +1231,7 @@ class _TabletCard extends StatelessWidget {
                     Expanded(
                       child: _UtilityButton(
                         icon: Icons.undo_rounded,
-                        label: 'Undo',
+                        label: L.of(context).undo,
                         onTap: controller.undo,
                       ),
                     ),
@@ -1237,7 +1239,7 @@ class _TabletCard extends StatelessWidget {
                     Expanded(
                       child: _UtilityButton(
                         icon: Icons.restart_alt_rounded,
-                        label: 'Reset',
+                        label: L.of(context).reset,
                         onTap: controller.reset,
                       ),
                     ),
@@ -1245,7 +1247,7 @@ class _TabletCard extends StatelessWidget {
                     Expanded(
                       child: _UtilityButton(
                         icon: Icons.center_focus_strong_rounded,
-                        label: 'Center',
+                        label: L.of(context).center,
                         onTap: controller.centerCamera,
                       ),
                     ),
@@ -1254,11 +1256,11 @@ class _TabletCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Center(
                   child: Text(
-                    'SYNTHESIZED IN DART  ·  120 HZ',
-                    style: JellyPalette.monoSmall.copyWith(
+                    L.of(context).synthNote,
+                    style: jellyMonoSmall().copyWith(
                       fontSize: 6.4,
                       letterSpacing: 1.1,
-                      color: JellyPalette.inkFaint.withValues(alpha: 0.65),
+                      color: jellyInkFaint().withValues(alpha: 0.65),
                     ),
                   ),
                 ),
@@ -1266,9 +1268,9 @@ class _TabletCard extends StatelessWidget {
                   child: TextButton.icon(
                     onPressed: () => showJellyAbout(context),
                     icon: const Icon(Icons.info_outline_rounded, size: 13),
-                    label: const Text('Privacy & support'),
+                    label: Text(L.of(context).privacySupport),
                     style: TextButton.styleFrom(
-                      foregroundColor: JellyPalette.inkSoft,
+                      foregroundColor: jellyInkSoft(),
                       textStyle: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
@@ -1288,13 +1290,13 @@ class _TabletCard extends StatelessWidget {
 class _FlavorLegend extends StatelessWidget {
   const _FlavorLegend();
 
-  static const List<String> _names = <String>[
-    'Coconut',
-    'Lemon',
-    'Lime',
-    'Blueberry',
-    'Cherry',
-    'Tangerine',
+  List<String> names(BuildContext context) => <String>[
+    L.of(context).flavorCoconut,
+    L.of(context).flavorLemon,
+    L.of(context).flavorLime,
+    L.of(context).flavorBlueberry,
+    L.of(context).flavorCherry,
+    L.of(context).flavorTangerine,
   ];
 
   @override
@@ -1310,7 +1312,7 @@ class _FlavorLegend extends StatelessWidget {
                   Expanded(
                     child: _FlavorDot(
                       index: row * 3 + col,
-                      name: _names[row * 3 + col],
+                      name: names(context)[row * 3 + col],
                     ),
                   ),
               ],
@@ -1339,7 +1341,7 @@ class _FlavorDot extends StatelessWidget {
             gradient: RadialGradient(
               center: const Alignment(-0.35, -0.4),
               colors: <Color>[
-                Colors.white.withValues(alpha: 0.9),
+                jellyGlass(0.9),
                 JellyPalette.flavor[index],
                 JellyPalette.flavorDeep[index],
               ],
@@ -1361,10 +1363,10 @@ class _FlavorDot extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.fade,
             softWrap: false,
-            style: JellyPalette.monoSmall.copyWith(
+            style: jellyMonoSmall().copyWith(
               fontSize: 7,
               letterSpacing: 0.1,
-              color: JellyPalette.inkSoft,
+              color: jellyInkSoft(),
             ),
           ),
         ),
@@ -1382,20 +1384,20 @@ class _StatStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: JellyPalette.ink.withValues(alpha: 0.045),
+        color: jellyInk().withValues(alpha: 0.045),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: <Widget>[
-          _Stat(value: '${controller.cube.solvedFaceCount}/6', label: 'FACES'),
+          _Stat(value: '${controller.cube.solvedFaceCount}/6', label: L.of(context).sectionFaces),
           Container(width: 1, height: 24, color: JellyPalette.hairline),
-          _Stat(value: '${controller.moves}', label: 'MOVES'),
+          _Stat(value: '${controller.moves}', label: L.of(context).sectionMoves),
           Container(width: 1, height: 24, color: JellyPalette.hairline),
           _Stat(
             value: controller.solving
                 ? '${controller.solveIndex}/${controller.solveTotal}'
-                : (controller.cube.isSolved ? 'READY' : 'MIXED'),
-            label: 'STATE',
+                : (controller.cube.isSolved ? L.of(context).statusReady : L.of(context).statusSolved),
+            label: L.of(context).sectionState,
           ),
         ],
       ),
@@ -1416,13 +1418,13 @@ class _Stat extends StatelessWidget {
         children: <Widget>[
           Text(
             value,
-            style: JellyPalette.label.copyWith(
+            style: jellyLabel().copyWith(
               fontSize: 14,
               fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
             ),
           ),
           const SizedBox(height: 2),
-          Text(label, style: JellyPalette.monoSmall.copyWith(fontSize: 7)),
+          Text(label, style: jellyMonoSmall().copyWith(fontSize: 7)),
         ],
       ),
     );
@@ -1450,7 +1452,7 @@ class _SizeSegment extends StatelessWidget {
       height: 48,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: JellyPalette.ink.withValues(alpha: 0.055),
+        color: jellyInk().withValues(alpha: 0.055),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -1529,19 +1531,19 @@ class _SegmentButton extends StatelessWidget {
                   Icon(
                     Icons.lock_rounded,
                     size: 9,
-                    color: JellyPalette.inkFaint,
+                    color: jellyInkFaint(),
                   ),
                   const SizedBox(width: 2),
                 ],
                 Text(
                   label,
-                  style: JellyPalette.label.copyWith(
+                  style: jellyLabel().copyWith(
                     fontSize: 10.5,
                     color: selected
                         ? Colors.white
                         : locked
-                        ? JellyPalette.inkFaint
-                        : JellyPalette.inkSoft,
+                        ? jellyInkFaint()
+                        : jellyInkSoft(),
                   ),
                 ),
               ],
@@ -1576,7 +1578,7 @@ class _SliderRow extends StatelessWidget {
       data: SliderTheme.of(context).copyWith(
         trackHeight: 8,
         activeTrackColor: JellyPalette.plum,
-        inactiveTrackColor: JellyPalette.ink.withValues(alpha: 0.08),
+        inactiveTrackColor: jellyInk().withValues(alpha: 0.08),
         thumbColor: Colors.white,
         overlayColor: JellyPalette.plum.withValues(alpha: 0.10),
         thumbShape: const RoundSliderThumbShape(
@@ -1595,23 +1597,23 @@ class _SliderRow extends StatelessWidget {
         Row(
           children: <Widget>[
             if (leftIcon != null) ...<Widget>[
-              Icon(leftIcon, size: 13, color: JellyPalette.inkSoft),
+              Icon(leftIcon, size: 13, color: jellyInkSoft()),
               const SizedBox(width: 6),
             ],
-            Text(label, style: JellyPalette.label.copyWith(fontSize: 11.5)),
+            Text(label, style: jellyLabel().copyWith(fontSize: 11.5)),
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.52),
+                color: jellyGlass(0.52),
                 borderRadius: BorderRadius.circular(7),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+                border: Border.all(color: jellyGlassEdge(0.7)),
               ),
               child: Text(
                 valueLabel,
-                style: JellyPalette.monoSmall.copyWith(
+                style: jellyMonoSmall().copyWith(
                   fontSize: 7.5,
-                  color: JellyPalette.inkSoft,
+                  color: jellyInkSoft(),
                   letterSpacing: 0.6,
                 ),
               ),
@@ -1656,7 +1658,7 @@ class _ToggleTile extends StatelessWidget {
             border: Border.all(
               color: value
                   ? JellyPalette.plum.withValues(alpha: 0.16)
-                  : Colors.white.withValues(alpha: 0.55),
+                  : jellyGlass(0.55),
             ),
           ),
           child: Row(
@@ -1668,11 +1670,11 @@ class _ToggleTile extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       label,
-                      style: JellyPalette.label.copyWith(fontSize: 10.5),
+                      style: jellyLabel().copyWith(fontSize: 10.5),
                     ),
                     Text(
                       subtitle,
-                      style: JellyPalette.monoSmall.copyWith(
+                      style: jellyMonoSmall().copyWith(
                         fontSize: 6.8,
                         letterSpacing: 0.6,
                       ),
@@ -1703,7 +1705,7 @@ class _TinySwitch extends StatelessWidget {
       decoration: BoxDecoration(
         color: value
             ? JellyPalette.plum
-            : JellyPalette.ink.withValues(alpha: 0.12),
+            : jellyInk().withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(99),
       ),
       child: AnimatedAlign(
@@ -1784,12 +1786,12 @@ class _ToolButtonState extends State<_ToolButton> {
                     : null,
                 color: widget.selected
                     ? null
-                    : Colors.white.withValues(alpha: 0.48),
+                    : jellyGlass(0.48),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: widget.selected
                       ? Colors.white.withValues(alpha: 0.18)
-                      : Colors.white.withValues(alpha: 0.66),
+                      : jellyGlass(0.66),
                 ),
                 boxShadow: widget.selected
                     ? <BoxShadow>[
@@ -1809,17 +1811,17 @@ class _ToolButtonState extends State<_ToolButton> {
                     size: 18,
                     color: widget.selected
                         ? Colors.white
-                        : JellyPalette.inkSoft,
+                        : jellyInkSoft(),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     widget.label,
-                    style: JellyPalette.monoSmall.copyWith(
+                    style: jellyMonoSmall().copyWith(
                       fontSize: 6.4,
                       letterSpacing: 0.35,
                       color: widget.selected
                           ? Colors.white.withValues(alpha: 0.78)
-                          : JellyPalette.inkFaint,
+                          : jellyInkFaint(),
                     ),
                   ),
                 ],
@@ -1861,12 +1863,12 @@ class _ActionIcon extends StatelessWidget {
             decoration: BoxDecoration(
               color: filled
                   ? JellyPalette.plum
-                  : Colors.white.withValues(alpha: 0.48),
+                  : jellyGlass(0.48),
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
                 color: filled
                     ? Colors.white.withValues(alpha: 0.16)
-                    : Colors.white.withValues(alpha: 0.66),
+                    : jellyGlass(0.66),
               ),
             ),
             child: Column(
@@ -1875,19 +1877,19 @@ class _ActionIcon extends StatelessWidget {
                 Icon(
                   icon,
                   size: 17,
-                  color: filled ? Colors.white : JellyPalette.inkSoft,
+                  color: filled ? Colors.white : jellyInkSoft(),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.clip,
-                  style: JellyPalette.monoSmall.copyWith(
+                  style: jellyMonoSmall().copyWith(
                     fontSize: 6.0,
                     letterSpacing: 0.15,
                     color: filled
                         ? Colors.white.withValues(alpha: 0.78)
-                        : JellyPalette.inkFaint,
+                        : jellyInkFaint(),
                   ),
                 ),
               ],
@@ -1921,21 +1923,21 @@ class _UtilityButton extends StatelessWidget {
         child: Container(
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.44),
+            color: jellyGlass(0.44),
             borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.64)),
+            border: Border.all(color: jellyGlassEdge(0.64)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(icon, size: 15, color: JellyPalette.inkSoft),
+              Icon(icon, size: 15, color: jellyInkSoft()),
               const SizedBox(width: 4),
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     label,
-                    style: JellyPalette.label.copyWith(fontSize: 9.5),
+                    style: jellyLabel().copyWith(fontSize: 9.5),
                   ),
                 ),
               ),
@@ -1967,16 +1969,16 @@ class _SmallTextButton extends StatelessWidget {
         height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 9),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.44),
+          color: jellyGlass(0.44),
           borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
+          border: Border.all(color: jellyGlassEdge(0.6)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, size: 12, color: JellyPalette.inkSoft),
+            Icon(icon, size: 12, color: jellyInkSoft()),
             const SizedBox(width: 4),
-            Text(label, style: JellyPalette.label.copyWith(fontSize: 8.5)),
+            Text(label, style: jellyLabel().copyWith(fontSize: 8.5)),
           ],
         ),
       ),
@@ -2007,12 +2009,12 @@ class _CardTool extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? JellyPalette.plum
-              : Colors.white.withValues(alpha: 0.44),
+              : jellyGlass(0.44),
           borderRadius: BorderRadius.circular(13),
           border: Border.all(
             color: selected
                 ? Colors.white.withValues(alpha: 0.16)
-                : Colors.white.withValues(alpha: 0.62),
+                : jellyGlass(0.62),
           ),
         ),
         child: Column(
@@ -2021,16 +2023,16 @@ class _CardTool extends StatelessWidget {
             Icon(
               icon,
               size: 15,
-              color: selected ? Colors.white : JellyPalette.inkSoft,
+              color: selected ? Colors.white : jellyInkSoft(),
             ),
             const SizedBox(height: 2),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.clip,
-              style: JellyPalette.label.copyWith(
+              style: jellyLabel().copyWith(
                 fontSize: 8.2,
-                color: selected ? Colors.white : JellyPalette.inkSoft,
+                color: selected ? Colors.white : jellyInkSoft(),
               ),
             ),
           ],
@@ -2063,12 +2065,12 @@ class _CardAction extends StatelessWidget {
         decoration: BoxDecoration(
           color: filled
               ? JellyPalette.plum
-              : Colors.white.withValues(alpha: 0.46),
+              : jellyGlass(0.46),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: filled
                 ? Colors.white.withValues(alpha: 0.16)
-                : Colors.white.withValues(alpha: 0.64),
+                : jellyGlass(0.64),
           ),
         ),
         child: Row(
@@ -2077,14 +2079,14 @@ class _CardAction extends StatelessWidget {
             Icon(
               icon,
               size: 15,
-              color: filled ? Colors.white : JellyPalette.inkSoft,
+              color: filled ? Colors.white : jellyInkSoft(),
             ),
             const SizedBox(width: 5),
             Text(
               label,
-              style: JellyPalette.label.copyWith(
+              style: jellyLabel().copyWith(
                 fontSize: 10,
-                color: filled ? Colors.white : JellyPalette.inkSoft,
+                color: filled ? Colors.white : jellyInkSoft(),
               ),
             ),
           ],
@@ -2104,7 +2106,7 @@ class _MiniDivider extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: <Widget>[
-          Text(label, style: JellyPalette.monoSmall.copyWith(fontSize: 7)),
+          Text(label, style: jellyMonoSmall().copyWith(fontSize: 7)),
           const SizedBox(width: 8),
           Expanded(child: Container(height: 1, color: JellyPalette.hairline)),
         ],
@@ -2174,11 +2176,11 @@ class _GlassIconButtonState extends State<_GlassIconButton> {
               width: widget.size,
               height: widget.size,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.42),
+                color: jellyGlass(0.42),
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.60)),
+                border: Border.all(color: jellyGlassEdge(0.60)),
               ),
-              child: Icon(widget.icon, size: 19, color: JellyPalette.inkSoft),
+              child: Icon(widget.icon, size: 19, color: jellyInkSoft()),
             ),
           ),
         ),
@@ -2201,9 +2203,9 @@ class _QuickCapsule extends StatelessWidget {
           height: 58,
           padding: const EdgeInsets.symmetric(horizontal: 5),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.44),
+            color: jellyGlass(0.44),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.64)),
+            border: Border.all(color: jellyGlassEdge(0.64)),
             boxShadow: <BoxShadow>[
               BoxShadow(
                 color: JellyPalette.plum.withValues(alpha: 0.10),
@@ -2217,17 +2219,17 @@ class _QuickCapsule extends StatelessWidget {
             children: <Widget>[
               _QuickAction(
                 icon: Icons.undo_rounded,
-                label: 'Undo',
+                label: L.of(context).undo,
                 onTap: controller.undo,
               ),
               _QuickAction(
                 icon: Icons.restart_alt_rounded,
-                label: 'Reset',
+                label: L.of(context).reset,
                 onTap: controller.reset,
               ),
               _QuickAction(
                 icon: Icons.center_focus_strong_rounded,
-                label: 'Center',
+                label: L.of(context).center,
                 onTap: controller.centerCamera,
               ),
             ],
@@ -2265,11 +2267,11 @@ class _QuickAction extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Icon(icon, size: 16, color: JellyPalette.inkSoft),
+                Icon(icon, size: 16, color: jellyInkSoft()),
                 const SizedBox(height: 3),
                 Text(
                   label.toUpperCase(),
-                  style: JellyPalette.monoSmall.copyWith(
+                  style: jellyMonoSmall().copyWith(
                     fontSize: 6.4,
                     letterSpacing: 0.7,
                   ),

@@ -1,0 +1,148 @@
+{
+  "@@locale": "en",
+  "softness": "Softness",
+  "speed": "Speed",
+  "sound": "Sound",
+  "haptics": "Haptics",
+  "hapticsSub": "Snaps & squish",
+  "hapticsSubShort": "Snaps",
+  "calmMode": "Calm mode",
+  "calm": "Calm",
+  "lessWobble": "Less wobble",
+  "muted": "MUTED",
+  "mute": "Mute",
+  "unmute": "Unmute",
+  "undo": "Undo",
+  "reset": "Reset",
+  "center": "Center",
+  "scramble": "Scramble",
+  "solve": "Solve",
+  "close": "Close",
+  "privacy": "Privacy",
+  "privacySupport": "Privacy & support",
+  "restorePurchases": "Restore Purchases",
+  "copySupportEmail": "Copy support email",
+  "openSourceLicenses": "Open source licenses",
+  "toolTwist": "Twist",
+  "toolSpin": "Spin",
+  "toolPoke": "Poke",
+  "toolDrop": "Drop",
+  "sectionFlavors": "FLAVORS",
+  "sectionTexture": "TEXTURE",
+  "sectionFaces": "FACES",
+  "sectionMoves": "MOVES",
+  "sectionState": "STATE",
+  "controlStation": "CONTROL STATION",
+  "jellyControls": "JELLY CONTROLS",
+  "jellyLab": "Jelly Lab",
+  "extraTypes": "EXTRA TYPES",
+  "jellyPass": "JELLY PASS",
+  "sectionPurchases": "PURCHASES",
+  "sectionPrivacy": "PRIVACY",
+  "sectionSupport": "SUPPORT",
+  "statusReady": "READY",
+  "statusSolved": "SOLVED",
+  "statusInPlay": "IN PLAY",
+  "statusMixing": "MIXING",
+  "statusSolving": "SOLVING",
+  "statusTwisting": "TWISTING",
+  "statusDropping": "DROPPING",
+  "statusPoking": "POKING",
+  "statusOrbiting": "ORBITING",
+  "statusScrambling": "SCRAMBLING",
+  "statusMelting": "MELTING",
+  "statusSolvedByHand": "SOLVED BY HAND",
+  "demoBadge": "DEMO",
+  "owned": "OWNED",
+  "solvingProgress": "SOLVING {index} / {total}",
+  "@solvingProgress": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "scrambledToast": "Scrambled · {count} moves",
+  "@scrambledToast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "solvedToast": "Solved · {time} · {moves} moves",
+  "@solvedToast": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "moves": {
+        "type": "int"
+      }
+    }
+  },
+  "sizeToast": "{n}×{n} · {count} jellylets",
+  "@sizeToast": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "solvingDoneToast": "Solved · {time} · {moves} moves",
+  "@solvingDoneToast": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "moves": {
+        "type": "int"
+      }
+    }
+  },
+  "toastFirstTwist": "First twist",
+  "toastFirstFace": "First face!",
+  "toastFirstLayer": "First layer!",
+  "toastTwoLayers": "Two layers!",
+  "toastNothingToUndo": "Nothing to undo",
+  "toastAlreadySolved": "Already solved · poke it",
+  "toastSolvePaused": "Solve paused · your move",
+  "toastReset": "Reset · fresh from the fridge",
+  "hintDragPoke": "DRAG A FACE  ·  TAP TO POKE",
+  "hintDragFull": "DRAG A FACE TO TWIST  ·  TAP TO POKE  ·  TWO FINGERS TO ORBIT",
+  "specimenLabel": "POKEABLE  ·  SPECIMEN 011",
+  "synthNote": "SYNTHESIZED IN DART  ·  120 HZ",
+  "jellyImpressed": "The jelly is impressed.",
+  "flavorCoconut": "Coconut",
+  "flavorLemon": "Lemon",
+  "flavorLime": "Lime",
+  "flavorBlueberry": "Blueberry",
+  "flavorCherry": "Cherry",
+  "flavorTangerine": "Tangerine",
+  "unlockTitle": "Unlock 5×5 & 6×6",
+  "unlockFor": "Unlock for {price}",
+  "@unlockFor": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "unlockBody": "Two bigger cubes, one small unlock. 5×5 and 6×6 join the free 2×2, 3×3 and 4×4 sizes, with future extra types included.",
+  "oneTimeNote": "One-time purchase. Payment is handled by the store. No subscription.",
+  "restoreNote": "Restore any time with the same store account.",
+  "unlockedMsg": "Extra Cube Types is unlocked on this device. It restores on any device signed into the same store account.",
+  "storeUnavailable": "Store unavailable",
+  "supportEmailCopied": "Support email copied",
+  "moreCubeMoreWobble": "More cube, more wobble.",
+  "aboutTagline": "A small, glossy puzzle.",
+  "aboutDescription": "A soft-body puzzle with a crisp, integer-perfect soul.",
+  "privacyBody": "No account. No ads. No analytics. No personal data is collected by the app.",
+  "viewFullPolicy": "View full privacy policy"
+}

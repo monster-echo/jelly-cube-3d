@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import 'controller.dart';
+import '../l10n/app_localizations.dart';
 import 'palette.dart';
 import 'purchase_ui.dart';
 import 'ui.dart';
@@ -43,7 +44,7 @@ class JellyCubeScope extends InheritedNotifier<JellyCubeController> {
 }
 
 class _JellyCubeAppState extends State<JellyCubeApp>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final JellyCubeController _controller;
   late final Ticker _ticker;
   late final bool _demo;
@@ -76,7 +77,11 @@ class _JellyCubeAppState extends State<JellyCubeApp>
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        _controller.loadCachedEntitlement();
+        // Entitlement first: the settings restore gates saved 4x4-6x6 sizes
+        // on the extra-types unlock.
+        _controller.loadCachedEntitlement().then((_) {
+          _controller.loadSettings();
+        });
         if (const bool.fromEnvironment('OPEN_PAYWALL')) {
           Timer(const Duration(milliseconds: 700), () {
             final nav = _navigatorKey.currentContext;
@@ -94,19 +99,35 @@ class _JellyCubeAppState extends State<JellyCubeApp>
       });
     }
     _ticker = createTicker(_controller.update)..start();
+    WidgetsBinding.instance.addObserver(this);
+    JellySkin.brightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
     _configureSystemChrome();
   }
 
+  @override
+  void didChangePlatformBrightness() {
+    final next = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    if (next != JellySkin.brightness) {
+      setState(() {
+        JellySkin.brightness = next;
+        _configureSystemChrome();
+      });
+    }
+  }
+
   void _configureSystemChrome() {
+    final dark = JellySkin.dark;
     try {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(
+        SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
+          statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: dark ? Brightness.dark : Brightness.light,
           systemNavigationBarColor: Colors.transparent,
-          systemNavigationBarIconBrightness: Brightness.dark,
+          systemNavigationBarIconBrightness:
+              dark ? Brightness.light : Brightness.dark,
           systemNavigationBarContrastEnforced: false,
         ),
       );
@@ -117,6 +138,7 @@ class _JellyCubeAppState extends State<JellyCubeApp>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
     if (_ownsController) _controller.dispose();
     super.dispose();
@@ -124,38 +146,45 @@ class _JellyCubeAppState extends State<JellyCubeApp>
 
   @override
   Widget build(BuildContext context) {
-    final theme = ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme:
-          ColorScheme.fromSeed(
-            seedColor: JellyPalette.plum,
-            brightness: Brightness.light,
-          ).copyWith(
-            primary: JellyPalette.plum,
-            secondary: JellyPalette.berry,
-            surface: Colors.white,
-            onSurface: JellyPalette.ink,
+    ThemeData buildTheme(Brightness brightness) {
+      final dark = brightness == Brightness.dark;
+      return ThemeData(
+        useMaterial3: true,
+        brightness: brightness,
+        colorScheme:
+            ColorScheme.fromSeed(
+              seedColor: JellyPalette.plum,
+              brightness: brightness,
+            ).copyWith(
+              primary: JellyPalette.plum,
+              secondary: JellyPalette.berry,
+              surface: dark ? const Color(0xFF2E1A32) : Colors.white,
+              onSurface: dark ? const Color(0xFFF3E9F5) : JellyPalette.ink,
+            ),
+        scaffoldBackgroundColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        tooltipTheme: TooltipThemeData(
+          decoration: BoxDecoration(
+            color: JellyPalette.plum.withValues(alpha: 0.94),
+            borderRadius: BorderRadius.circular(8),
           ),
-      scaffoldBackgroundColor: Colors.transparent,
-      splashFactory: NoSplash.splashFactory,
-      highlightColor: Colors.transparent,
-      hoverColor: Colors.transparent,
-      tooltipTheme: TooltipThemeData(
-        decoration: BoxDecoration(
-          color: JellyPalette.plum.withValues(alpha: 0.94),
-          borderRadius: BorderRadius.circular(8),
+          textStyle: const TextStyle(color: Colors.white, fontSize: 11),
+          waitDuration: const Duration(milliseconds: 500),
         ),
-        textStyle: const TextStyle(color: Colors.white, fontSize: 11),
-        waitDuration: const Duration(milliseconds: 500),
-      ),
-    );
+      );
+    }
 
     return MaterialApp(
       title: "Jelly Cube 3D",
       navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
-      theme: theme,
+      localizationsDelegates: L.localizationsDelegates,
+      supportedLocales: L.supportedLocales,
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      themeMode: ThemeMode.system,
       home: AnimatedBuilder(
         animation: _controller,
         builder: (context, _) {
@@ -172,6 +201,28 @@ class _JellyCubeAppState extends State<JellyCubeApp>
         },
       ),
       builder: (context, child) {
+        _controller.updateTexts(
+          statusSolving: L.of(context).solvingProgress,
+          statusScrambling: L.of(context).statusScrambling,
+          statusMelting: L.of(context).statusMelting,
+          statusTwisting: L.of(context).statusTwisting,
+          statusDropping: L.of(context).statusDropping,
+          statusPoking: L.of(context).statusPoking,
+          statusOrbiting: L.of(context).statusOrbiting,
+          statusSolved: L.of(context).statusSolved,
+          statusInPlay: L.of(context).statusInPlay,
+          toastFirstTwist: L.of(context).toastFirstTwist,
+          toastFirstFace: L.of(context).toastFirstFace,
+          toastFirstLayer: L.of(context).toastFirstLayer,
+          toastTwoLayers: L.of(context).toastTwoLayers,
+          toastNothingToUndo: L.of(context).toastNothingToUndo,
+          toastAlreadySolved: L.of(context).toastAlreadySolved,
+          toastSolvePaused: L.of(context).toastSolvePaused,
+          toastReset: L.of(context).toastReset,
+          scrambledToast: L.of(context).scrambledToast,
+          solvedToast: L.of(context).solvedToast,
+          sizeToast: L.of(context).sizeToast,
+        );
         final content = CallbackShortcuts(
           bindings: <ShortcutActivator, VoidCallback>{
             const SingleActivator(LogicalKeyboardKey.keyM):
@@ -183,8 +234,8 @@ class _JellyCubeAppState extends State<JellyCubeApp>
           child: child ?? const SizedBox.shrink(),
         );
         return DefaultTextStyle(
-          style: const TextStyle(
-            color: JellyPalette.ink,
+          style: TextStyle(
+            color: jellyInk(),
             decoration: TextDecoration.none,
             decorationColor: Colors.transparent,
           ),
@@ -206,7 +257,7 @@ class _DemoShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: JellyPalette.studioMid,
+      backgroundColor: jellyStudioMid(),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final size = Size(constraints.maxWidth, constraints.maxHeight);
