@@ -1,8 +1,9 @@
 name: release-artifacts
 
 # Builds signed artifacts on workflow_dispatch/tags and publishes a GitHub
-# Release for v* tags. It never uploads to App Store Connect, Play Console or
-# AppGallery; store submission remains human-approved and manual.
+# Release for v* tags. Uploaded stores: Android AAB lands in the Play
+# production track as a DRAFT (never auto-published), and iOS IPA lands in
+# TestFlight. Human review and the final release buttons stay manual.
 
 on:
   workflow_dispatch:
@@ -78,6 +79,62 @@ jobs:
             build/release/**/*.aab
             build/release/**/*.sha256
           if-no-files-found: error
+      - name: Upload AAB to Google Play (production draft)
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "Play service account not configured; skipping Play upload."
+            exit 0
+          fi
+          AAB="$(find build/release -name '*.aab' -print -quit)"
+          test -n "$AAB"
+          python3 - "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" "$AAB" <<'PY'
+          import json, sys, time, urllib.request
+          key_path, aab_path = sys.argv[1], sys.argv[2]
+          package = 'tech.zhongbei.jellycube3d'
+          api = 'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/' + package
+          upload = 'https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/' + package
+
+          import jwt
+          key = json.load(open(key_path))
+          now = int(time.time())
+          assertion = jwt.encode({'iss': key['client_email'],
+              'scope': 'https://www.googleapis.com/auth/androidpublisher',
+              'aud': key['token_uri'], 'iat': now, 'exp': now + 3600},
+              key['private_key'], algorithm='RS256')
+          body = ('grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion='
+                  + assertion).encode()
+          token = json.load(urllib.request.urlopen(urllib.request.Request(
+              key['token_uri'], data=body,
+              headers={'Content-Type': 'application/x-www-form-urlencoded'})))['access_token']
+          auth = {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}
+
+          def call(method, path, data=None, ctype='application/json'):
+              payload = json.dumps(data).encode() if isinstance(data, (dict, list)) else (data or b'')
+              r = urllib.request.Request(api + path, data=payload, method=method,
+                  headers=dict(auth, **{'Content-Type': ctype}))
+              with urllib.request.urlopen(r, timeout=300) as resp:
+                  raw = resp.read()
+                  return json.loads(raw) if raw else {}
+
+          edit = call('POST', '/edits')['id']
+          print('edit', edit)
+          aab = open(aab_path, 'rb').read()
+          r = urllib.request.Request(f'{upload}/edits/{edit}/bundles?uploadType=media',
+              data=aab, method='POST',
+              headers=dict(auth, **{'Content-Type': 'application/octet-stream'}))
+          with urllib.request.urlopen(r, timeout=600) as resp:
+              bundle = json.load(resp)
+          vc = bundle['versionCode']
+          print('AAB versionCode', vc)
+          call('PUT', f'/edits/{edit}/tracks/production',
+              {'track': 'production', 'releases': [
+                  {'name': f'{bundle.get("versionName", "")} ({vc})',
+                   'versionCodes': [vc], 'status': 'draft'}]})
+          call('POST', f'/edits/{edit}:commit')
+          print('Play production draft committed for versionCode', vc)
+          PY
 
   ios:
     if: ${{ github.event_name == 'push' || inputs.platform == 'all' || inputs.platform == 'ios' }}
