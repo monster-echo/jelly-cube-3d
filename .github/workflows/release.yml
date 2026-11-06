@@ -137,7 +137,7 @@ jobs:
           print('AAB versionCode', vc)
           call('PUT', f'/edits/{edit}/tracks/production',
               {'track': 'production', 'releases': [
-                  {'name': f'{bundle.get("versionName", "")} ({vc})',
+                  {'name': f'{os.environ.get("RELEASE_NAME", "")} ({vc})',
                    'versionCodes': [vc], 'status': 'draft'}]})
           call('POST', f'/edits/{edit}:commit')
           print('Play production draft committed for versionCode', vc)
