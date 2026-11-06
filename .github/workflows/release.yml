@@ -65,6 +65,13 @@ jobs:
           flutter pub get
           flutter analyze
           ./tool/test.sh
+      - name: Compute version and build number
+        run: |
+          VERSION="$(awk '/^version:/ {print $2}' pubspec.yaml | cut -d+ -f1)"
+          BUILD="$(date -u +%y%j%H%M)"
+          echo "RELEASE_NAME=$VERSION" >> "$GITHUB_ENV"
+          echo "RELEASE_NUMBER=$BUILD" >> "$GITHUB_ENV"
+          echo "version $VERSION build $BUILD"
       - name: Build AAB
         run: |
           if [ "${{ inputs.allow_unsigned }}" = "true" ]; then
@@ -202,6 +209,13 @@ jobs:
           flutter pub get
           flutter analyze
           ./tool/test.sh
+      - name: Compute version and build number
+        run: |
+          VERSION="$(awk '/^version:/ {print $2}' pubspec.yaml | cut -d+ -f1)"
+          BUILD="$(date -u +%y%j%H%M)"
+          echo "RELEASE_NAME=$VERSION" >> "$GITHUB_ENV"
+          echo "RELEASE_NUMBER=$BUILD" >> "$GITHUB_ENV"
+          echo "version $VERSION build $BUILD"
       - name: Build IPA
         run: ./scripts/build-release.sh ios
       - name: Upload to TestFlight
