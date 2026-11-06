@@ -135,10 +135,14 @@ jobs:
               bundle = json.load(resp)
           vc = bundle['versionCode']
           print('AAB versionCode', vc)
+          internal_release = {'name': f'{os.environ.get("RELEASE_NAME", "")} ({vc}) 内部测试',
+                   'versionCodes': [vc], 'status': 'completed'}
+          prod_release = {'name': f'{os.environ.get("RELEASE_NAME", "")} ({vc})',
+                   'versionCodes': [vc], 'status': 'draft'}
+          call('PUT', f'/edits/{edit}/tracks/internal',
+              {'track': 'internal', 'releases': [internal_release]})
           call('PUT', f'/edits/{edit}/tracks/production',
-              {'track': 'production', 'releases': [
-                  {'name': f'{os.environ.get("RELEASE_NAME", "")} ({vc})',
-                   'versionCodes': [vc], 'status': 'draft'}]})
+              {'track': 'production', 'releases': [prod_release]})
           call('POST', f'/edits/{edit}:commit')
           print('Play production draft committed for versionCode', vc)
           PY
