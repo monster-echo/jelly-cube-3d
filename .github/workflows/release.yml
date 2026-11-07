@@ -33,7 +33,24 @@ defaults:
     working-directory: .
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        run: |
+          VERSION="$(awk '/^version:/ {print $2}' pubspec.yaml)"
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "${GITHUB_REF_NAME}" != "v$VERSION" ]]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match pubspec version $VERSION"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "pubspec version: $VERSION"
+
   android:
+    needs: version
     if: ${{ github.event_name == 'push' || inputs.platform == 'all' || inputs.platform == 'android' }}
     runs-on: ubuntu-latest
     steps:
@@ -161,10 +178,18 @@ jobs:
           call('PUT', f'/edits/{edit}/tracks/production',
               {'track': 'production', 'releases': [prod_release]})
           call('POST', f'/edits/{edit}:commit')
-          print('Play production draft committed for versionCode', vc)
+          check = call('POST', '/edits')['id']
+          for track in ('internal', 'production'):
+              tr = call('GET', f'/edits/{check}/tracks/{track}')
+              codes = [c for r in tr.get('releases', [])
+                       for c in r.get('versionCodes', [])]
+              if str(vc) not in codes:
+                  raise SystemExit(f'committed bundle missing from {track} track')
+          print('Play upload verified on internal+production for versionCode', vc)
           PY
 
   ios:
+    needs: version
     if: ${{ github.event_name == 'push' || inputs.platform == 'all' || inputs.platform == 'ios' }}
     runs-on: macos-latest
     steps:
@@ -266,6 +291,13 @@ jobs:
         run: |
           python3 -m pip install --quiet 'PyJWT[crypto]'
           python3 scripts/asc_set_whatsnew.py --version "$RELEASE_NAME"
+      - name: Verify Apple processing
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPSTORE_ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+        run: |
+          python3 scripts/asc_verify_build.py --build "$RELEASE_NUMBER"
       - uses: actions/upload-artifact@v4
         with:
           name: ios-release
