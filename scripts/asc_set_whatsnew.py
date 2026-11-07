@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Attach per-version What's New notes to the App Store version.
 
-Reads store/google/release-notes/<version>/<locale>.txt and PATCHes
+Reads store/apple/release-notes/<version>/<locale>.txt and PATCHes
 whatsNewText onto the matching App Store Connect version localization,
-creating the version / localization records when needed. Play locale codes
-are aliased to their ASC equivalents (zh-CN -> zh-Hans).
+creating the version / localization records when needed. File stems must
+use ASC locale codes directly (en-US, zh-Hans, ja, ...).
 
 Env: APPSTORE_KEY_ID, APPSTORE_ISSUER, APPSTORE_PRIVATE_KEY (p8 contents).
 Exit 0 on success, 2 on any failure (notes are mandatory per release tag).
@@ -22,8 +22,8 @@ import jwt  # PyJWT[crypto]
 
 API = 'https://api.appstoreconnect.apple.com/v1'
 BUNDLE_ID = 'tech.zhongbei.jellycube3d'
-LOCALE_ALIASES = {'zh-CN': 'zh-Hans', 'zh-TW': 'zh-Hant'}
-NOTES_ROOT = pathlib.Path(__file__).resolve().parent.parent / 'store/google/release-notes'
+LOCALE_ALIASES = {}  # stems are ASC locales already
+NOTES_ROOT = pathlib.Path(__file__).resolve().parent.parent / 'store/apple/release-notes'
 
 
 def token():
