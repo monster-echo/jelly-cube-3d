@@ -135,10 +135,18 @@ jobs:
               bundle = json.load(resp)
           vc = bundle['versionCode']
           print('AAB versionCode', vc)
+          def load_notes():
+              import pathlib
+              notes = []
+              base = pathlib.Path('store/google/release-notes')
+              for f in sorted(base.glob('*.txt')):
+                  notes.append({'language': f.stem, 'text': f.read_text().strip()[:500]})
+              return notes
+          notes = load_notes()
           internal_release = {'name': f'{os.environ.get("RELEASE_NAME", "")} ({vc}) 内部测试',
-                   'versionCodes': [vc], 'status': 'completed'}
+                   'versionCodes': [vc], 'status': 'completed', 'releaseNotes': notes}
           prod_release = {'name': f'{os.environ.get("RELEASE_NAME", "")} ({vc})',
-                   'versionCodes': [vc], 'status': 'draft'}
+                   'versionCodes': [vc], 'status': 'draft', 'releaseNotes': notes}
           call('PUT', f'/edits/{edit}/tracks/internal',
               {'track': 'internal', 'releases': [internal_release]})
           call('PUT', f'/edits/{edit}/tracks/production',
