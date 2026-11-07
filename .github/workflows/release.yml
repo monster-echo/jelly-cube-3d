@@ -137,10 +137,19 @@ jobs:
           print('AAB versionCode', vc)
           def load_notes():
               import pathlib
+              version = os.environ.get('RELEASE_NAME', '')
+              base = pathlib.Path('store/google/release-notes') / version
+              if not base.is_dir():
+                  raise SystemExit(
+                      f'Missing what-is-new notes: {base}/ with at least en-US.txt. '
+                      'Every release tag must ship user-facing notes.')
               notes = []
-              base = pathlib.Path('store/google/release-notes')
               for f in sorted(base.glob('*.txt')):
-                  notes.append({'language': f.stem, 'text': f.read_text().strip()[:500]})
+                  text = f.read_text().strip()[:500]
+                  if text:
+                      notes.append({'language': f.stem, 'text': text})
+              if not any(n['language'] == 'en-US' for n in notes):
+                  raise SystemExit('en-US.txt what-is-new notes are mandatory.')
               return notes
           notes = load_notes()
           internal_release = {'name': f'{os.environ.get("RELEASE_NAME", "")} ({vc}) 内部测试',
