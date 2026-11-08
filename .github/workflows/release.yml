@@ -289,7 +289,7 @@ jobs:
           APPSTORE_ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
           APPSTORE_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
         run: |
-          python3 -m pip install --quiet 'PyJWT[crypto]'
+          python3 -m pip install --quiet --break-system-packages 'PyJWT[crypto]' || python3 -m pip install --quiet --user --break-system-packages 'PyJWT[crypto]'
           python3 scripts/asc_set_whatsnew.py --version "$RELEASE_NAME"
       - name: Verify Apple processing
         env:
@@ -297,6 +297,7 @@ jobs:
           APPSTORE_ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
           APPSTORE_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
         run: |
+          python3 -m pip install --quiet --break-system-packages 'PyJWT[crypto]' || python3 -m pip install --quiet --user --break-system-packages 'PyJWT[crypto]'
           python3 scripts/asc_verify_build.py --build "$RELEASE_NUMBER"
       - uses: actions/upload-artifact@v4
         with:
