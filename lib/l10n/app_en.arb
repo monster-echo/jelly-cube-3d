@@ -18,6 +18,8 @@
   "scramble": "Scramble",
   "solve": "Solve",
   "close": "Close",
+  "showControls": "Show controls",
+  "hideControls": "Hide controls",
   "privacy": "Privacy",
   "privacySupport": "Privacy & support",
   "restorePurchases": "Restore Purchases",

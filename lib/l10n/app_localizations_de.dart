@@ -63,6 +63,12 @@ class LDe extends L {
   String get close => 'Schließen';
 
   @override
+  String get showControls => 'Steuerung einblenden';
+
+  @override
+  String get hideControls => 'Steuerung ausblenden';
+
+  @override
   String get privacy => 'Datenschutz';
 
   @override

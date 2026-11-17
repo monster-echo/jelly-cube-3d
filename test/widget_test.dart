@@ -123,6 +123,37 @@ void main() {
     }
   });
 
+  testWidgets('tablet settings card starts hidden and toggles open', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1024, 768);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final controller = JellyCubeController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(JellyCubeApp(controller: controller));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    Rect labRect() => tester.getRect(find.text('Jelly Lab'));
+
+    // Hidden by default: the card rests fully off the right edge so the
+    // specimen owns the whole stage.
+    expect(labRect().left, greaterThanOrEqualTo(1024));
+
+    // The brand-bar toggle docks the card.
+    await tester.tap(find.byKey(const ValueKey<String>('panel-toggle')));
+    await tester.pump(); // kick the tween (ticker starts on this frame)
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(labRect().left, lessThan(1024 - 280));
+
+    // The brand-bar toggle can send it away again.
+    await tester.tap(find.byKey(const ValueKey<String>('panel-toggle')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(labRect().left, greaterThanOrEqualTo(1024));
+    await tester.pump(const Duration(seconds: 3));
+  });
+
   testWidgets('controller.startDemo hides all chrome', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;

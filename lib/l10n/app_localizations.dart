@@ -215,6 +215,18 @@ abstract class L {
   /// **'Close'**
   String get close;
 
+  /// No description provided for @showControls.
+  ///
+  /// In en, this message translates to:
+  /// **'Show controls'**
+  String get showControls;
+
+  /// No description provided for @hideControls.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide controls'**
+  String get hideControls;
+
   /// No description provided for @privacy.
   ///
   /// In en, this message translates to:

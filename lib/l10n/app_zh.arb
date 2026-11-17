@@ -18,6 +18,8 @@
   "scramble": "打乱",
   "solve": "复原",
   "close": "关闭",
+  "showControls": "显示控制台",
+  "hideControls": "收起控制台",
   "privacy": "隐私",
   "privacySupport": "隐私与支持",
   "restorePurchases": "恢复购买",

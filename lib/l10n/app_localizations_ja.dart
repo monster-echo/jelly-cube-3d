@@ -63,6 +63,12 @@ class LJa extends L {
   String get close => '閉じる';
 
   @override
+  String get showControls => '操作パネルを表示';
+
+  @override
+  String get hideControls => '操作パネルを隠す';
+
+  @override
   String get privacy => 'プライバシー';
 
   @override

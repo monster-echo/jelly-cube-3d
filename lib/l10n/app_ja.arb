@@ -18,6 +18,8 @@
   "scramble": "シャッフル",
   "solve": "完成へ",
   "close": "閉じる",
+  "showControls": "操作パネルを表示",
+  "hideControls": "操作パネルを隠す",
   "privacy": "プライバシー",
   "privacySupport": "プライバシーとサポート",
   "restorePurchases": "購入を復元",

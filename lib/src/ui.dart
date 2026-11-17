@@ -8,6 +8,7 @@ import '../l10n/app_localizations.dart';
 
 import 'controller.dart';
 import 'about.dart';
+import 'ads/jelly_banner_ads.dart';
 import 'painter.dart';
 import 'purchase_ui.dart';
 import 'palette.dart';
@@ -25,27 +26,49 @@ class JellyShell extends StatefulWidget {
 
 class _JellyShellState extends State<JellyShell> {
   bool _sheetExpanded = false;
+  // Tablet: the settings card starts hidden so the specimen gets the full
+  // stage; the brand-bar toggle reveals it on demand.
+  bool _cardVisible = false;
 
   JellyCubeController get c => widget.controller;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final size = Size(constraints.maxWidth, constraints.maxHeight);
-        final wide = size.width >= _kTabletBreakpoint;
-        final padding = MediaQuery.paddingOf(context);
-        if (wide) {
-          return _TabletLayout(controller: c, size: size, padding: padding);
-        }
-        return _PhoneLayout(
-          controller: c,
-          size: size,
-          padding: padding,
-          expanded: _sheetExpanded,
-          onExpandedChanged: (value) => setState(() => _sheetExpanded = value),
-        );
-      },
+    // The banner slot sits below the stage so the LayoutBuilder inside keeps
+    // seeing the reduced (banner-excluded) height.
+    return Column(
+      children: [
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final size = Size(constraints.maxWidth, constraints.maxHeight);
+              final wide = size.width >= _kTabletBreakpoint;
+              final padding = MediaQuery.paddingOf(context);
+              if (wide) {
+                return _TabletLayout(
+                  controller: c,
+                  size: size,
+                  padding: padding,
+                  visible: _cardVisible,
+                  onVisibleChanged: (value) =>
+                      setState(() => _cardVisible = value),
+                );
+              }
+              return _PhoneLayout(
+                controller: c,
+                size: size,
+                padding: padding,
+                expanded: _sheetExpanded,
+                onExpandedChanged: (value) =>
+                    setState(() => _sheetExpanded = value),
+              );
+            },
+          ),
+        ),
+        // Bottom anchored banner; hides itself on unsupported platforms,
+        // before consent, and while the ad-free entitlement is owned.
+        JellyBannerSlot(unlocked: c.extraTypesUnlocked),
+      ],
     );
   }
 }
@@ -145,80 +168,110 @@ class _TabletLayout extends StatelessWidget {
     required this.controller,
     required this.size,
     required this.padding,
+    required this.visible,
+    required this.onVisibleChanged,
   });
 
   final JellyCubeController controller;
   final Size size;
   final EdgeInsets padding;
+  final bool visible;
+  final ValueChanged<bool> onVisibleChanged;
+
+  static const double _cardWidth = 280;
+  // Extra room the scene keeps between the card edge and the screen edge.
+  static const double _cardGap = 24;
 
   @override
   Widget build(BuildContext context) {
-    final scene = Rect.fromLTRB(
-      0,
-      padding.top + 78,
-      size.width - 304,
-      size.height - 24,
-    );
-    controller.setViewport(size, scene);
-    return Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        Positioned.fill(
-          child: JellyStage(controller: controller, sceneRect: scene),
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          top: 0,
-          child: _BrandBar(
-            controller: controller,
-            compact: false,
-            padding: padding,
-          ),
-        ),
-        Positioned(
-          right: 20,
-          top: padding.top + 78,
-          width: 280,
-          height: math.min(900.0, size.height - padding.top - 102),
-          child: _TabletCard(
-            controller: controller,
-            compact: size.height < 820,
-          ),
-        ),
-        Positioned(
-          left: 20,
-          right: 0,
-          top: padding.top + 78,
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: Padding(
-              padding: EdgeInsets.only(right: 306),
-              child: _ToastLayer(controller: controller),
+    // t: 0 = card hidden (full-width stage), 1 = card docked on the right.
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(end: visible ? 1 : 0),
+      duration: const Duration(milliseconds: 340),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, _) {
+        final cardSpace = (_cardWidth + _cardGap) * t;
+        final scene = Rect.fromLTRB(
+          0,
+          padding.top + 78,
+          size.width - cardSpace,
+          size.height - 24,
+        );
+        controller.setViewport(size, scene);
+        return Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Positioned.fill(
+              child: JellyStage(controller: controller, sceneRect: scene),
             ),
-          ),
-        ),
-        Positioned(
-          left: 24,
-          bottom: 24,
-          child: _QuickCapsule(controller: controller),
-        ),
-        Positioned(
-          left: 24,
-          right: 304,
-          bottom: 94,
-          child: _MeltBadge(controller: controller, compact: false),
-        ),
-        Positioned(
-          left: 24,
-          right: 304,
-          top: padding.top + 92,
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: _Hint(controller: controller, compact: false),
-          ),
-        ),
-      ],
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: _BrandBar(
+                controller: controller,
+                compact: false,
+                padding: padding,
+                showPanelToggle: true,
+                panelVisible: visible,
+                onTogglePanel: () => onVisibleChanged(!visible),
+              ),
+            ),
+            Positioned(
+              right: 20,
+              top: padding.top + 78,
+              width: _cardWidth,
+              height: math.min(900.0, size.height - padding.top - 102),
+              child: IgnorePointer(
+                ignoring: !visible,
+                child: Opacity(
+                  opacity: t,
+                  child: FractionalTranslation(
+                    translation: Offset((1 - t) * 1.2, 0),
+                    child: _TabletCard(
+                      controller: controller,
+                      compact: size.height < 820,
+                      onClose: () => onVisibleChanged(false),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 20,
+              right: 0,
+              top: padding.top + 78,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: EdgeInsets.only(right: 306 * t),
+                  child: _ToastLayer(controller: controller),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 24,
+              bottom: 24,
+              child: _QuickCapsule(controller: controller),
+            ),
+            Positioned(
+              left: 24,
+              right: 304 * t,
+              bottom: 94,
+              child: _MeltBadge(controller: controller, compact: false),
+            ),
+            Positioned(
+              left: 24,
+              right: 304 * t,
+              top: padding.top + 92,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: _Hint(controller: controller, compact: false),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -307,11 +360,17 @@ class _BrandBar extends StatelessWidget {
     required this.controller,
     required this.compact,
     required this.padding,
+    this.showPanelToggle = false,
+    this.panelVisible = false,
+    this.onTogglePanel,
   });
 
   final JellyCubeController controller;
   final bool compact;
   final EdgeInsets padding;
+  final bool showPanelToggle;
+  final bool panelVisible;
+  final VoidCallback? onTogglePanel;
 
   @override
   Widget build(BuildContext context) {
@@ -377,6 +436,18 @@ class _BrandBar extends StatelessWidget {
             ),
             _StatusPill(controller: controller, compact: compact),
             SizedBox(width: compact ? 4 : 8),
+            if (showPanelToggle && onTogglePanel != null) ...<Widget>[
+              _GlassIconButton(
+                key: const ValueKey<String>('panel-toggle'),
+                icon: Icons.tune_rounded,
+                label: panelVisible
+                    ? L.of(context).hideControls
+                    : L.of(context).showControls,
+                onTap: onTogglePanel!,
+                size: 48,
+              ),
+              SizedBox(width: compact ? 4 : 8),
+            ],
             _GlassIconButton(
               key: const ValueKey<String>('mute-button'),
               icon: controller.muted
@@ -1036,9 +1107,14 @@ class _ExpandedPanel extends StatelessWidget {
 
 // --------------------------------------------------------------- tablet card
 class _TabletCard extends StatelessWidget {
-  const _TabletCard({required this.controller, required this.compact});
+  const _TabletCard({
+    required this.controller,
+    required this.compact,
+    this.onClose,
+  });
   final JellyCubeController controller;
   final bool compact;
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -1079,6 +1155,15 @@ class _TabletCard extends StatelessWidget {
                           ? JellyPalette.berry
                           : const Color(0xFF4D9A42),
                     ),
+                    if (onClose != null) ...<Widget>[
+                      const SizedBox(width: 10),
+                      _GlassIconButton(
+                        icon: Icons.close_rounded,
+                        label: L.of(context).close,
+                        onTap: onClose!,
+                        size: 30,
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 8),

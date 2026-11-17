@@ -63,6 +63,12 @@ class LFr extends L {
   String get close => 'Fermer';
 
   @override
+  String get showControls => 'Afficher les commandes';
+
+  @override
+  String get hideControls => 'Masquer les commandes';
+
+  @override
   String get privacy => 'Confidentialité';
 
   @override

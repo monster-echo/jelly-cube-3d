@@ -1,1 +1,3 @@
 #include "Generated.xcconfig"
+// AdMob App ID (Info.plist $(ADMOB_APPLICATION_ID)): Jelly Cube 3D iOS production ID (created 2026-11-17).
+ADMOB_APPLICATION_ID = ca-app-pub-2271052258925299~4315636529

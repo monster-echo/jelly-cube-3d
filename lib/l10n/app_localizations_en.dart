@@ -63,6 +63,12 @@ class LEn extends L {
   String get close => 'Close';
 
   @override
+  String get showControls => 'Show controls';
+
+  @override
+  String get hideControls => 'Hide controls';
+
+  @override
   String get privacy => 'Privacy';
 
   @override

@@ -18,6 +18,8 @@
   "scramble": "Mischen",
   "solve": "Lösen",
   "close": "Schließen",
+  "showControls": "Steuerung einblenden",
+  "hideControls": "Steuerung ausblenden",
   "privacy": "Datenschutz",
   "privacySupport": "Datenschutz & Hilfe",
   "restorePurchases": "Käufe wiederherstellen",

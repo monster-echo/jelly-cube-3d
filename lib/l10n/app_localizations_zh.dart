@@ -63,6 +63,12 @@ class LZh extends L {
   String get close => '关闭';
 
   @override
+  String get showControls => '显示控制台';
+
+  @override
+  String get hideControls => '收起控制台';
+
+  @override
   String get privacy => '隐私';
 
   @override

@@ -36,6 +36,14 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // AdMob App ID (manifest placeholder ${admobAppId}): defaults to
+        // Google's test App ID for local development; inject the production
+        // ID with -PadmobAppId=ca-app-pub-xxxx~yyyy (or the
+        // ORG_GRADLE_PROJECT_admobAppId env var / gradle.properties) once the
+        // Rubik's Jelly entry is created in apps.admob.com.
+        manifestPlaceholders["admobAppId"] =
+            project.findProperty("admobAppId") as String?
+                ?: "ca-app-pub-3940256099942544~3347511713"
     }
 
     signingConfigs {

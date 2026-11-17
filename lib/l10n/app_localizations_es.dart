@@ -63,6 +63,12 @@ class LEs extends L {
   String get close => 'Cerrar';
 
   @override
+  String get showControls => 'Mostrar controles';
+
+  @override
+  String get hideControls => 'Ocultar controles';
+
+  @override
   String get privacy => 'Privacidad';
 
   @override

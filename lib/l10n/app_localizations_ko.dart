@@ -63,6 +63,12 @@ class LKo extends L {
   String get close => '닫기';
 
   @override
+  String get showControls => '컨트롤 표시';
+
+  @override
+  String get hideControls => '컨트롤 숨기기';
+
+  @override
   String get privacy => '개인정보';
 
   @override

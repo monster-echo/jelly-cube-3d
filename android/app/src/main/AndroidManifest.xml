@@ -28,6 +28,12 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- AdMob App ID. Value comes from the gradle property admobAppId
+             (see android/app/build.gradle.kts); CI/release overrides via
+             -PadmobAppId=... or ORG_GRADLE_PROJECT_admobAppId. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

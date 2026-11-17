@@ -26,7 +26,17 @@ common_dart_defines=(
   --dart-define=APP_NAME="$APP_NAME"
   --dart-define=BUNDLE_ID="$BUNDLE_ID"
   --dart-define=IAP_PRODUCT_ID="${IAP_PRODUCT_ID:-tech.zhongbei.jellycube3d.extra_types}"
+  --dart-define=ADMOB_ANDROID_BANNER_UNIT="${ADMOB_ANDROID_BANNER_UNIT:-}"
+  --dart-define=ADMOB_IOS_BANNER_UNIT="${ADMOB_IOS_BANNER_UNIT:-}"
 )
+# AdMob banner units are mandatory for store builds: empty values would fall
+# back to Google test ad units (invalid traffic, account suspension risk).
+for v in ADMOB_ANDROID_BANNER_UNIT ADMOB_IOS_BANNER_UNIT; do
+  if [[ -z "${!v:-}" ]]; then
+    echo "BLOCKED: $v is not set in release.env. Harvest it with the admob_setup.py script." >&2
+    exit 5
+  fi
+done
 version_args=(--build-name="$RELEASE_NAME" --build-number="$RELEASE_NUMBER")
 
 usage() {
