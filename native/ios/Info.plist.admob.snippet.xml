@@ -1,0 +1,6 @@
+<!-- Add inside <dict> in ios/Info.plist after Cocos Build -> iOS -->
+<key>GADApplicationIdentifier</key>
+<string>ca-app-pub-2271052258925299~4315636529</string>
+<key>NSUserTrackingUsageDescription</key>
+<string>This identifier will be used to deliver personalized ads to you.</string>
+<!-- Also add Google's SKAdNetworkItems per https://developers.google.com/admob/ios/quick-start -->

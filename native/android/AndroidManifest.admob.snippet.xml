@@ -1,0 +1,12 @@
+<!-- 1. Add inside <application> in AndroidManifest.xml after Cocos Build -> Android -->
+<meta-data
+    android:name="com.google.android.gms.ads.APPLICATION_ID"
+    android:value="ca-app-pub-2271052258925299~2443463295" />
+
+<!-- 2. Add to app/build.gradle dependencies:
+    implementation 'com.google.android.gms:play-services-ads:23.6.0'
+-->
+<!-- 3. Call in AppActivity.onCreate(Bundle):
+    com.jellycube3d.bridge.AdMobBridge.init(this);
+    com.jellycube3d.bridge.HapticsBridge.init(this);
+-->

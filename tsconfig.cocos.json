@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ES2017", "DOM"]
+  },
+  "files": ["node_modules/@cocos/creator-types/engine.d.ts"],
+  "include": ["assets/scripts/**/*.ts"]
+}

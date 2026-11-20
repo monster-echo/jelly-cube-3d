@@ -1,0 +1,8 @@
+name = "jelly-cube-3d-leaderboard"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jelly_cube_3d_lb"
+database_id = "8cfdd7af-97e0-479b-8985-a55ff7c9fe5e"

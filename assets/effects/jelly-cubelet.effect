@@ -1,0 +1,174 @@
+// Jelly Cube 3D — GPU Soft-Body, Jigsaw UV, & Multi-Material Shader (Cocos Creator 3.8.6)
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: jelly-vs:vert
+      frag: jelly-fs:frag
+      properties:
+        mainColor:      { value: [1.0, 0.4, 0.55, 0.92], editor: { type: color } }
+        emissiveColor:  { value: [0.02, 0.01, 0.02, 1.0], editor: { type: color } }
+        jellyParams:    { value: [0.45, 0.65, 2.6, 56.0] } # x: wrapLight, y: rimStrength, z: rimPower, w: shininess
+        squashVec:      { value: [1.0, 1.0, 1.0, 0.0] }    # xyz: squash scale, w: wobble phase
+        pokeLocal:      { value: [0.0, 0.0, 0.0, 0.0] }    # xyz: local poke dir, w: dent strength
+        uvRect:         { value: [0.0, 0.0, 1.0, 1.0] }    # xy: offset, zw: scale for whole-face jigsaw
+        lightDir:       { value: [0.45, 0.80, 0.55, 0.0] } # w: matMode (0:jelly, 1:plush, 2:liquid, 3:sand)
+        mainTexture:    { value: white }
+        useTexture:     { value: 0.0 }
+      depthStencilState:
+        depthTest: true
+        depthWrite: true
+  - name: transparent
+    passes:
+    - vert: jelly-vs:vert
+      frag: jelly-fs:frag
+      properties:
+        mainColor:      { value: [1.0, 0.4, 0.55, 0.92], editor: { type: color } }
+        emissiveColor:  { value: [0.02, 0.01, 0.02, 1.0], editor: { type: color } }
+        jellyParams:    { value: [0.45, 0.65, 2.6, 56.0] }
+        squashVec:      { value: [1.0, 1.0, 1.0, 0.0] }
+        pokeLocal:      { value: [0.0, 0.0, 0.0, 0.0] }
+        uvRect:         { value: [0.0, 0.0, 1.0, 1.0] }
+        lightDir:       { value: [0.45, 0.80, 0.55, 0.0] }
+        mainTexture:    { value: white }
+        useTexture:     { value: 0.0 }
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      depthStencilState:
+        depthTest: true
+        depthWrite: true
+}%
+
+CCProgram jelly-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <builtin/uniforms/cc-local>
+
+  in vec3 a_position;
+  in vec3 a_normal;
+  in vec2 a_texCoord;
+
+  uniform JellyVS {
+    vec4 squashVec;
+    vec4 pokeLocal;
+    vec4 uvRect;
+  };
+
+  out vec3 v_worldNormal;
+  out vec3 v_worldPos;
+  out vec2 v_uv;
+  out float v_pokeMask;
+
+  vec4 vert () {
+    vec3 pos = a_position * squashVec.xyz;
+    pos.x += a_position.y * squashVec.w * 0.08;
+    pos.z -= a_position.y * squashVec.w * 0.06;
+
+    float pokeStrength = pokeLocal.w;
+    v_pokeMask = 0.0;
+    if (abs(pokeStrength) > 0.001) {
+      vec3 dir = normalize(pokeLocal.xyz + vec3(0.0001));
+      float align = max(0.0, dot(normalize(a_position + vec3(0.0001)), dir));
+      float dent = pow(align, 2.2) * pokeStrength;
+      pos -= dir * dent * 0.22;
+      v_pokeMask = dent;
+    }
+
+    vec4 worldPos = cc_matWorld * vec4(pos, 1.0);
+    v_worldPos = worldPos.xyz;
+    v_worldNormal = normalize((cc_matWorldIT * vec4(a_normal, 0.0)).xyz);
+    v_uv = uvRect.xy + a_texCoord * uvRect.zw;
+
+    return cc_matViewProj * worldPos;
+  }
+}%
+
+CCProgram jelly-fs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+
+  in vec3 v_worldNormal;
+  in vec3 v_worldPos;
+  in vec2 v_uv;
+  in float v_pokeMask;
+
+  uniform sampler2D mainTexture;
+
+  uniform JellyFS {
+    vec4 mainColor;
+    vec4 emissiveColor;
+    vec4 jellyParams;
+    vec4 lightDir;
+    float useTexture;
+  };
+
+  float hash3(vec3 p) {
+    p = fract(p * vec3(443.897, 441.423, 437.195));
+    p += dot(p, p.yzx + 19.19);
+    return fract((p.x + p.y) * p.z);
+  }
+
+  vec4 frag () {
+    float t = cc_time.x;
+    float matMode = lightDir.w;
+    vec3 N = normalize(v_worldNormal);
+    vec3 V = normalize(cc_cameraPos.xyz - v_worldPos);
+
+    if (matMode > 1.5 && matMode < 2.5) {
+      float rx = sin(v_worldPos.y * 9.0 + t * 3.6) * 0.14;
+      float ry = cos(v_worldPos.x * 9.0 - t * 3.1) * 0.14;
+      N = normalize(N + vec3(rx, ry, 0.0));
+    }
+
+    vec3 L = normalize(lightDir.xyz);
+    vec3 H = normalize(L + V);
+
+    float wrap = jellyParams.x;
+    float diff = max(0.0, (dot(N, L) + wrap) / (1.0 + wrap));
+    float fill = max(0.0, (dot(N, normalize(vec3(-0.6, -0.4, 0.5))) + 0.5) / 1.5) * 0.14;
+
+    float specScale = useTexture > 0.5 ? 0.18 : 0.36;
+    float specMain = pow(max(0.0, dot(N, H)), jellyParams.w) * specScale;
+    float specBroad = pow(max(0.0, dot(N, H)), max(8.0, jellyParams.w * 0.22)) * (specScale * 0.20);
+    float fresnel = pow(1.0 - max(0.0, dot(N, V)), jellyParams.z) * jellyParams.y * 0.30;
+    float shimmer = 0.02 * sin(t * 2.2 + v_worldPos.x * 2.5 + v_worldPos.y * 2.5);
+
+    vec3 base = mainColor.rgb;
+    if (useTexture > 0.5) {
+      vec4 tex = texture(mainTexture, v_uv);
+      base = mix(base, tex.rgb * mix(vec3(1.0), base * 0.96, 0.48), tex.a);
+    }
+
+    vec3 extraGlow = vec3(0.0);
+    if (matMode > 0.5 && matMode < 1.5) {
+      base += hash3(floor(v_worldPos * 64.0)) * 0.10 - 0.05;
+      specMain *= 0.05;
+      specBroad *= 0.10;
+    } else if (matMode > 1.5 && matMode < 2.5) {
+      float caustic = pow(max(0.0, sin((v_worldPos.x + v_worldPos.y) * 7.5 + t * 2.8) * 0.5 + 0.5), 5.0);
+      extraGlow += vec3(0.14, 0.22, 0.28) * caustic;
+    } else if (matMode > 2.5) {
+      vec3 sandPos = floor((v_worldPos + vec3(0.0, t * 0.12, 0.0)) * 42.0);
+      float grain = hash3(sandPos);
+      float sparkle = pow(grain, 16.0) * (0.5 + 0.5 * sin(t * 8.0 + grain * 40.0));
+      base *= 0.92 + 0.12 * sin(v_worldPos.y * 14.0 + t * 1.6);
+      extraGlow += vec3(0.85, 0.78, 0.62) * sparkle;
+    }
+
+    vec3 lit = base * (0.54 + diff * 0.44 + fill + shimmer)
+             + vec3(1.0) * (specMain + specBroad)
+             + mix(base, vec3(1.0), 0.60) * fresnel
+             + emissiveColor.rgb * 0.5
+             + extraGlow
+             + vec3(0.14, 0.12, 0.18) * max(0.0, v_pokeMask);
+
+    vec3 over = max(vec3(0.0), lit - vec3(0.85));
+    lit = min(lit, vec3(0.85)) + over / (1.0 + over * 1.6);
+
+    return vec4(lit, mainColor.a);
+  }
+}%

@@ -8,19 +8,22 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  analyze-test:
+  checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/setup-node@v4
         with:
-          flutter-version: '3.47.6'
-          channel: stable
-          cache: true
-      - run: flutter pub get
-      - run: flutter analyze
-      - run: ./tool/test.sh
-      - run: pip install pillow
-      - run: python3 tool/check_store_assets.py
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: TypeScript check, core tests & web build
+        run: |
+          npm test
+          node web/build.mjs

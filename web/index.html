@@ -1,50 +1,81 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="$FLUTTER_BASE_HREF">
-
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Jelly Cube 3D — a glossy soft-body twisty puzzle, hand-built in Flutter.">
-  <meta name="theme-color" content="#E6DFF0">
-
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Jelly Cube 3D">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Jelly Cube 3D</title>
-  <link rel="manifest" href="manifest.json">
-  <style>
-    html, body { margin: 0; height: 100%; overflow: hidden; background: #E6DFF0; }
-  </style>
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <div id="app">
+    <canvas id="gl-canvas"></canvas>
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <script src="flutter_bootstrap.js" async></script>
+    <!-- Minimal Top HUD -->
+    <header id="hud-top" class="hud-top hidden">
+      <div class="left-group">
+        <button class="pill-btn level-pill" data-nav="levels">
+          <span id="hud-title">Level 1</span>
+          <span class="caret">▾</span>
+        </button>
+      </div>
+
+      <div class="moves-pill">
+        <span id="hud-sub">0/1 · 00:00.0</span>
+      </div>
+
+      <div class="right-group">
+        <button class="pill-btn coins-pill" data-nav="skins" title="Jelly Collection">
+          🍬 <span id="hud-coins">40</span>
+        </button>
+        <button class="icon-btn" id="btn-menu" title="Pause">⏸</button>
+      </div>
+    </header>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- Minimal Bottom Dock -->
+    <footer id="hud-bottom" class="hud-bottom hidden">
+      <button class="act-btn" id="btn-undo">↩ Undo</button>
+      <button class="act-btn hint" id="btn-hint">💡 Hint</button>
+      <button class="act-btn ad-solve" id="btn-auto-solve">🎬 Tutorial</button>
+    </footer>
+
+    <!-- Home Screen (Live 3D Jelly Cube rotates in background) -->
+    <section id="home-screen" class="home-screen">
+      <div class="home-top">
+        <div class="home-badge">JELLY CUBE 3D</div>
+        <div class="pill-btn coins-pill" data-nav="skins">🍬 <span id="home-coins">120</span></div>
+      </div>
+
+      <div class="home-hero-spacer">
+        <h1 class="home-logo">Jelly Cube 3D</h1>
+        <p class="home-tagline">Squishy Physics · Endgame Puzzles · Global Ranks</p>
+      </div>
+
+      <div class="home-actions">
+        <button class="home-cta" id="home-play">▶ Play Level <span id="home-lvl">1</span></button>
+        <div class="home-grid-2">
+          <button class="home-card-btn" id="home-daily">📅 Daily (<span id="home-streak">0</span>d streak)</button>
+          <button class="home-card-btn" id="home-challenge">🏆 Global Ranks</button>
+        </div>
+        <div class="home-grid-4">
+          <button class="home-mini-btn" id="home-skins">🍮 Skins</button>
+          <button class="home-mini-btn" id="home-share">📤 Share +15🍬</button>
+          <button class="home-mini-btn" id="home-rate">⭐ Rate</button>
+          <button class="home-mini-btn gold" id="home-ad-coins">🎬 +30 🍬</button>
+        </div>
+        <div class="legal-links">
+          <button class="legal-btn" id="btn-privacy">Privacy Policy</button>
+          <span>·</span>
+          <button class="legal-btn" id="btn-terms">Terms of Use</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="modal-backdrop" class="modal-backdrop hidden">
+      <div id="modal-card" class="modal-card"></div>
+    </div>
+  </div>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>

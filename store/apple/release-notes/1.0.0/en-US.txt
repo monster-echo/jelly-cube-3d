@@ -1,1 +1,0 @@
-Initial release: a jelly-soft twisty cube with dark mode and seven languages.

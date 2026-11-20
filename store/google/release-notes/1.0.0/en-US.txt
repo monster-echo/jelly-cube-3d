@@ -1,1 +1,0 @@
-Initial release: a glossy soft-body Rubik's cube with jelly physics. Twist, poke, drop — dark mode and seven languages included.
