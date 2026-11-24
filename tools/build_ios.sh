@@ -151,6 +151,20 @@ open(p, 'w').write(src.replace(anchor, add, 1))
 PY
 	echo "CMakeLists: bridge sources appended"
 fi
+
+if [[ -f "$CML" ]] && ! grep -q "SceneDelegate.mm" "$CML"; then
+	python3 - "$CML" <<'PY'
+import sys
+p = sys.argv[1]
+src = open(p).read()
+anchor = '    ${CC_PROJECT_DIR}/HapticsBridge.mm\n)'
+add = '    ${CC_PROJECT_DIR}/HapticsBridge.mm\n    ${CC_PROJECT_DIR}/SceneDelegate.mm\n)'
+if anchor not in src:
+    raise SystemExit('bridge sources block not found in ' + p)
+open(p, 'w').write(src.replace(anchor, add, 1))
+PY
+	echo "CMakeLists: SceneDelegate appended"
+fi
 if [[ -f "$CML" ]] && ! grep -q "AppTrackingTransparency" "$CML"; then
 	python3 - "$CML" <<'PY'
 import sys
@@ -167,7 +181,8 @@ fi
 # "file missing" is what let 2.0.0 ship a stale AdMobBridge (ATT still called,
 # Info.plist had no usage string) even after native/ios was fixed.
 echo "== inject AdMob/Haptics bridges into native/engine/ios"
-cp "$ROOT/native/ios/AdMobBridge.mm" "$ROOT/native/ios/HapticsBridge.mm" "$TEMPLATE_IOS/"
+cp "$ROOT/native/ios/AdMobBridge.mm" "$ROOT/native/ios/HapticsBridge.mm" \
+	"$ROOT/native/ios/AppDelegate.mm" "$ROOT/native/ios/SceneDelegate.mm" "$TEMPLATE_IOS/"
 
 # Class declarations so AppDelegate.mm can call the bridges. Signatures must
 # match AdMobBridge.mm exactly.
@@ -183,6 +198,38 @@ cat > "$TEMPLATE_IOS/AdMobBridge.h" <<'H'
 + (void)requestReview:(NSString *)unused;
 @end
 H
+
+
+# Shared plist helpers: the scene template and the archived app must carry the
+# same keys, or the iOS 26+ scene enforcement traps at launch.
+plist_set() {
+	local plist="$1" key="$2" value="$3"
+	/usr/libexec/PlistBuddy -c "Set :$key $value" "$plist" 2>/dev/null \
+		|| /usr/libexec/PlistBuddy -c "Add :$key string $value" "$plist"
+}
+
+apply_scene_manifest() {
+	local plist="$1"
+	/usr/libexec/PlistBuddy -c "Delete :UIApplicationSceneManifest" "$plist" 2>/dev/null || true
+	/usr/libexec/PlistBuddy \
+		-c "Add :UIApplicationSceneManifest dict" \
+		-c "Add :UIApplicationSceneManifest:UIApplicationSupportsMultipleScenes bool false" \
+		-c "Add :UIApplicationSceneManifest:UISceneConfigurations dict" \
+		-c "Add :UIApplicationSceneManifest:UISceneConfigurations:UIWindowSceneSessionRoleApplication array" \
+		-c "Add :UIApplicationSceneManifest:UISceneConfigurations:UIWindowSceneSessionRoleApplication:0 dict" \
+		-c "Add :UIApplicationSceneManifest:UISceneConfigurations:UIWindowSceneSessionRoleApplication:0:UISceneConfigurationName string Default Configuration" \
+		-c "Add :UIApplicationSceneManifest:UISceneConfigurations:UIWindowSceneSessionRoleApplication:0:UISceneDelegateClassName string SceneDelegate" \
+		"$plist"
+}
+
+apply_portrait_fullscreen() {
+	local plist="$1"
+	/usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations" "$plist" 2>/dev/null || true
+	/usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" \
+		-c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" "$plist"
+	/usr/libexec/PlistBuddy -c "Set :UIRequiresFullScreen true" "$plist" 2>/dev/null \
+		|| /usr/libexec/PlistBuddy -c "Add :UIRequiresFullScreen bool true" "$plist"
+}
 
 APP_DELEGATE="$TEMPLATE_IOS/AppDelegate.mm"
 if grep -q "preloadAds" "$APP_DELEGATE"; then
@@ -214,6 +261,17 @@ fi
 # One build is enough now that the bridges are already in the template before
 # CMake configures the project.
 cocos_build
+
+# Patch the template after the Cocos build: the editor rewrites
+# UISupportedInterfaceOrientations from the project settings, which would
+# otherwise leave dev builds landscape (Xcode "Run" bypasses the archive step).
+if [[ -f "$TEMPLATE_IOS/Info.plist" ]]; then
+	echo "== patch template Info.plist (scene manifest, AdMob, portrait)"
+	plist_set "$TEMPLATE_IOS/Info.plist" GADApplicationIdentifier "$ADMOB_APP_ID"
+	plist_set "$TEMPLATE_IOS/Info.plist" NSUserTrackingUsageDescription "This identifier will be used to deliver personalized ads to you."
+	apply_scene_manifest "$TEMPLATE_IOS/Info.plist"
+	apply_portrait_fullscreen "$TEMPLATE_IOS/Info.plist"
+fi
 
 if [[ ! -d "$PROJ_DIR" ]]; then
 	echo "No Xcode proj at $PROJ_DIR" >&2
@@ -323,6 +381,7 @@ pb_set CFBundleDisplayName "$DISPLAY_NAME"
 pb_set CFBundleShortVersionString "$VERSION"
 pb_set CFBundleVersion "$BUILD"
 pb_set GADApplicationIdentifier "$ADMOB_APP_ID"
+apply_scene_manifest "$INFO_PLIST"
 # ATT purpose string: required whenever ATTrackingManager is invoked. Missing
 # it terminates the app at launch (TCC), which is what 2.0.0 shipped.
 pb_set NSUserTrackingUsageDescription "This identifier will be used to deliver personalized ads to you."
