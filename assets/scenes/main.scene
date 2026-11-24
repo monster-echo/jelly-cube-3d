@@ -23,32 +23,92 @@
     "_active": true,
     "_components": [],
     "_prefab": null,
-    "_lpos": { "__type__": "cc.Vec3", "x": 0, "y": 0, "z": 0 },
-    "_lrot": { "__type__": "cc.Quat", "x": 0, "y": 0, "z": 0, "w": 1 },
-    "_lscale": { "__type__": "cc.Vec3", "x": 1, "y": 1, "z": 1 },
+    "_lpos": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "_lrot": {
+      "__type__": "cc.Quat",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 1
+    },
+    "_lscale": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
     "_mobility": 0,
     "_layer": 1073741824,
-    "_euler": { "__type__": "cc.Vec3", "x": 0, "y": 0, "z": 0 },
+    "_euler": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
     "autoReleaseAssets": false,
-    "_globals": { "__id__": 7 },
-    "_id": "a1b2c3d4-1111-4444-8888-112233445566"
+    "_globals": {
+      "__id__": 7
+    },
+    "_id": "eb9f966a-a770-4ae5-bb8d-748f957fbae9"
   },
   {
     "__type__": "cc.Node",
     "_name": "Canvas",
     "_objFlags": 0,
     "__editorExtras__": {},
-    "_parent": { "__id__": 1 },
-    "_children": [{ "__id__": 3 }],
+    "_parent": {
+      "__id__": 1
+    },
+    "_children": [
+      {
+        "__id__": 3
+      }
+    ],
     "_active": true,
-    "_components": [{ "__id__": 5 }, { "__id__": 6 }],
+    "_components": [
+      {
+        "__id__": 5
+      },
+      {
+        "__id__": 6
+      },
+      {
+        "__id__": 8
+      }
+    ],
     "_prefab": null,
-    "_lpos": { "__type__": "cc.Vec3", "x": 360, "y": 640, "z": 0 },
-    "_lrot": { "__type__": "cc.Quat", "x": 0, "y": 0, "z": 0, "w": 1 },
-    "_lscale": { "__type__": "cc.Vec3", "x": 1, "y": 1, "z": 1 },
+    "_lpos": {
+      "__type__": "cc.Vec3",
+      "x": 360,
+      "y": 640,
+      "z": 0
+    },
+    "_lrot": {
+      "__type__": "cc.Quat",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 1
+    },
+    "_lscale": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
     "_mobility": 0,
     "_layer": 33554432,
-    "_euler": { "__type__": "cc.Vec3", "x": 0, "y": 0, "z": 0 },
+    "_euler": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
     "_id": "canvasNodeJelly3D"
   },
   {
@@ -56,17 +116,44 @@
     "_name": "Camera",
     "_objFlags": 0,
     "__editorExtras__": {},
-    "_parent": { "__id__": 2 },
+    "_parent": {
+      "__id__": 2
+    },
     "_children": [],
     "_active": true,
-    "_components": [{ "__id__": 4 }],
+    "_components": [
+      {
+        "__id__": 4
+      }
+    ],
     "_prefab": null,
-    "_lpos": { "__type__": "cc.Vec3", "x": 0, "y": 0, "z": 1000 },
-    "_lrot": { "__type__": "cc.Quat", "x": 0, "y": 0, "z": 0, "w": 1 },
-    "_lscale": { "__type__": "cc.Vec3", "x": 1, "y": 1, "z": 1 },
+    "_lpos": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 1000
+    },
+    "_lrot": {
+      "__type__": "cc.Quat",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 1
+    },
+    "_lscale": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
     "_mobility": 0,
     "_layer": 1073741824,
-    "_euler": { "__type__": "cc.Vec3", "x": 0, "y": 0, "z": 0 },
+    "_euler": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
     "_id": "uiCameraNodeJelly3D"
   },
   {
@@ -74,7 +161,9 @@
     "_name": "",
     "_objFlags": 0,
     "__editorExtras__": {},
-    "node": { "__id__": 3 },
+    "node": {
+      "__id__": 3
+    },
     "_enabled": true,
     "__prefab": null,
     "_projection": 0,
@@ -84,11 +173,23 @@
     "_orthoHeight": 640,
     "_near": 1,
     "_far": 2000,
-    "_color": { "__type__": "cc.Color", "r": 0, "g": 0, "b": 0, "a": 0 },
+    "_color": {
+      "__type__": "cc.Color",
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 0
+    },
     "_depth": 1,
     "_stencil": 0,
     "_clearFlags": 6,
-    "_rect": { "__type__": "cc.Rect", "x": 0, "y": 0, "width": 1, "height": 1 },
+    "_rect": {
+      "__type__": "cc.Rect",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
     "_aperture": 19,
     "_shutter": 7,
     "_iso": 0,
@@ -106,11 +207,21 @@
     "_name": "",
     "_objFlags": 0,
     "__editorExtras__": {},
-    "node": { "__id__": 2 },
+    "node": {
+      "__id__": 2
+    },
     "_enabled": true,
     "__prefab": null,
-    "_contentSize": { "__type__": "cc.Size", "width": 720, "height": 1280 },
-    "_anchorPoint": { "__type__": "cc.Vec2", "x": 0.5, "y": 0.5 },
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 720,
+      "height": 1280
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0.5,
+      "y": 0.5
+    },
     "_id": "canvasTransformJelly3D"
   },
   {
@@ -118,14 +229,33 @@
     "_name": "",
     "_objFlags": 0,
     "__editorExtras__": {},
-    "node": { "__id__": 2 },
+    "node": {
+      "__id__": 2
+    },
     "_enabled": true,
     "__prefab": null,
-    "_cameraComponent": { "__id__": 4 },
+    "_cameraComponent": {
+      "__id__": 4
+    },
     "_alignCanvasWithScreen": true,
     "_id": "canvasCompJelly3D"
   },
   {
     "__type__": "cc.SceneGlobals"
+  },
+  {
+    "__type__": "0e55bDchjhGxZDL2v1IvL06",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 2
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "jellyEffect": {
+      "__uuid__": "98fa2dc8-6d2a-460e-8e0c-b9e08c52c6fa",
+      "__expectedType__": "cc.EffectAsset"
+    },
+    "_id": "jellyBootstrapCmp01"
   }
 ]

@@ -1,0 +1,13 @@
+{
+  "name": "jellycube3d",
+  "platform": "android",
+  "buildPath": "project://build-android",
+  "debug": false,
+  "md5Cache": true,
+  "sourceMaps": false,
+  "packages": {
+    "android": {
+      "packageName": "tech.zhongbei.jellycube3d"
+    }
+  }
+}

@@ -58,13 +58,16 @@ export class JellyBootstrap extends Component {
             light.illuminance = 65000;
         }
 
-        // 3. 3D Jelly Cube Root
+        // 3. 3D Jelly Cube Root — wire while inactive: addComponent runs
+        // onLoad immediately, so jellyEffect/camera must be set before that.
         const cubeRoot = new Node('JellyCubeRoot');
         cubeRoot.parent = scene ?? this.node.parent;
+        cubeRoot.active = false;
         cubeRoot.setPosition(Vec3.ZERO);
         const cubeView = cubeRoot.addComponent(JellyCubeView);
         cubeView.jellyEffect = this.jellyEffect;
         cubeView.camera = cam;
+        cubeRoot.active = true;
 
         // 4. Game Controller
         const ctrl = this.node.addComponent(JellyGameController);

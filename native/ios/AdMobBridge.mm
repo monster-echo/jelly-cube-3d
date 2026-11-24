@@ -60,13 +60,12 @@ static const NSTimeInterval kInterstitialCooldownSec = 60.0;
     AdMobBridge *s = [self shared];
     static dispatch_once_t initOnce;
     dispatch_once(&initOnce, ^{
-        if (@available(iOS 14, *)) {
-            [ATTrackingManager requestTrackingAuthorizationWithCompletionHandler:^(ATTrackingManagerAuthorizationStatus status) {
-                [GADMobileAds.sharedInstance startWithCompletionHandler:nil];
-            }];
-        } else {
-            [GADMobileAds.sharedInstance startWithCompletionHandler:nil];
-        }
+        // ATT prompt intentionally omitted: without a matching "tracks users"
+        // App Privacy declaration, Apple blocks the submission
+        // (STATE_ERROR.BINARY_INDICATES_APP_TRACKS_USERS). AdMob serves
+        // non-personalized ads; enable ATT together with updated privacy
+        // labels in a later release.
+        [GADMobileAds.sharedInstance startWithCompletionHandler:nil];
     });
 
     if (!s->_rewardedAd && !s->_rewardedLoading) {

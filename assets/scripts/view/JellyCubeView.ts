@@ -138,22 +138,24 @@ export class JellyCubeView extends Component {
             if (this.jellyEffect) {
                 mat.initialize({ effectAsset: this.jellyEffect, technique: 1 });
             } else {
-                mat.initialize({ effectName: 'builtin-standard' });
+                mat.initialize({ effectName: 'builtin-unlit' });
             }
-            if (this.jellyEffect) {
-                mat.setProperty('mainColor', new Vec4(r, g, b, a));
-            } else {
-                mat.setProperty('albedo', new Color(r * 255, g * 255, b * 255, a * 255));
-            }
+            mat.setProperty('mainColor', new Vec4(r, g, b, a));
             return mat;
         };
 
         this._coreMat = makeMat(0.98, 0.94, 0.98, 0.35);
         this._flavorMats = Array.from({ length: 6 }, () => makeMat(1, 0.5, 0.6, 0.9));
 
+        // builtin-standard is not packed unless an asset references it, so the
+        // plate (and the no-effect fallback above) must use builtin-unlit.
         this._plateMat = new Material();
-        this._plateMat.initialize({ effectName: 'builtin-standard' });
-        this._plateMat.setProperty('albedo', new Color(252, 248, 250, 255));
+        if (this.jellyEffect) {
+            this._plateMat.initialize({ effectAsset: this.jellyEffect, technique: 1 });
+        } else {
+            this._plateMat.initialize({ effectName: 'builtin-unlit' });
+        }
+        this._plateMat.setProperty('mainColor', new Vec4(0.988, 0.973, 0.98, 1));
     }
 
     private _ensurePlate(): void {
@@ -162,7 +164,9 @@ export class JellyCubeView extends Component {
         plate.parent = this.node;
         const mr = plate.addComponent(MeshRenderer);
         mr.mesh = getPlateMesh();
-        if (this._plateMat) mr.material = this._plateMat;
+        // Never assign a pass-less material: it aborts bindCube and leaves the
+        // whole cube unbuilt.
+        if (this._plateMat && this._plateMat.passes.length > 0) mr.material = this._plateMat;
         plate.setPosition(0, -2.25, 0);
         this._plateNode = plate;
     }

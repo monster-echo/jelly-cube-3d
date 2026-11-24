@@ -62,6 +62,11 @@ export class JellyHUD extends Component {
 
     onLoad(): void {
         this._buildLayout();
+    }
+
+    start(): void {
+        // controller is assigned right after addComponent, so subscribe in
+        // start (subscribe also pushes the current state immediately).
         if (this.controller) {
             this._unsub = this.controller.subscribe((s) => this._onStateChanged(s));
         }
@@ -98,6 +103,9 @@ export class JellyHUD extends Component {
         radius = 18,
     ): { node: Node; gfx: Graphics } {
         const node = new Node(name);
+        // Runtime-created nodes default to the DEFAULT layer; the UI camera
+        // only draws UI_2D, so inherit the HUD node's layer.
+        node.layer = this.node.layer;
         node.parent = parent;
         node.addComponent(UITransform).setContentSize(w, h);
         const gfx = node.addComponent(Graphics);
@@ -117,6 +125,7 @@ export class JellyHUD extends Component {
         h = 40,
     ): Label {
         const node = new Node(name);
+        node.layer = this.node.layer;
         node.parent = parent;
         node.addComponent(UITransform).setContentSize(w, h);
         const lbl = node.addComponent(Label);
@@ -164,10 +173,12 @@ export class JellyHUD extends Component {
     // --------------------------------------------------------- Layout
     private _buildLayout(): void {
         this._homeRoot = new Node('HomeRoot');
+        this._homeRoot.layer = this.node.layer;
         this._homeRoot.parent = this.node;
         this._homeRoot.addComponent(UITransform).setContentSize(720, 1280);
 
         this._gameRoot = new Node('GameRoot');
+        this._gameRoot.layer = this.node.layer;
         this._gameRoot.parent = this.node;
         this._gameRoot.addComponent(UITransform).setContentSize(720, 1280);
 
@@ -186,6 +197,7 @@ export class JellyHUD extends Component {
         this._pinWidget(this._toastLabel.node, 118);
 
         this._modalRoot = new Node('ModalRoot');
+        this._modalRoot.layer = this.node.layer;
         this._modalRoot.parent = this.node;
     }
 
@@ -745,6 +757,7 @@ export class JellyHUD extends Component {
 
             const localLb = getGlobalLeaderboard(this._lbSize, s.playerName, s.bestRecords[this._lbSize]);
             const rowsNode = new Node('Rows');
+            rowsNode.layer = this.node.layer;
             rowsNode.parent = card;
             const renderRows = (entries: typeof localLb.entries) => {
                 rowsNode.removeAllChildren();

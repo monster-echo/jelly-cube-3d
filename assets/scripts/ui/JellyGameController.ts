@@ -118,7 +118,9 @@ export class JellyGameController extends Component {
     private _lastTouch = new Vec2();
     private _listeners = new Set<StateListener>();
 
-    onLoad(): void {
+    start(): void {
+        // cubeView/cameraRig are assigned by JellyBootstrap right after
+        // addComponent; start runs after that wiring.
         JellyAudio.setMuted(this._save.muted);
         this.showHome();
         this._autoDailyCheckIn();

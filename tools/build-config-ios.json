@@ -1,0 +1,13 @@
+{
+  "name": "jellycube3d",
+  "platform": "ios",
+  "buildPath": "project://build-ios-native",
+  "debug": false,
+  "md5Cache": true,
+  "sourceMaps": false,
+  "packages": {
+    "ios": {
+      "packageName": "tech.zhongbei.jellycube3d"
+    }
+  }
+}
