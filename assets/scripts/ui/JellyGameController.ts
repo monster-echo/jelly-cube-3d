@@ -113,6 +113,9 @@ export class JellyGameController extends Component {
     private _runStartMs: number | null = null;
     private _elapsedMs = 0;
 
+    /** Set by the HUD while a modal covers the cube. */
+    uiBlocking = false;
+
     private _drag: ActiveDrag | null = null;
     private _orbiting = false;
     private _lastTouch = new Vec2();
@@ -493,7 +496,7 @@ export class JellyGameController extends Component {
         const loc = e.getLocation();
         this._lastTouch.set(loc.x, loc.y);
 
-        if (this._onHome || this._autoSolving || this._replaying || this._paused) {
+        if (this.uiBlocking || this._onHome || this._autoSolving || this._replaying || this._paused) {
             this._orbiting = true;
             return;
         }

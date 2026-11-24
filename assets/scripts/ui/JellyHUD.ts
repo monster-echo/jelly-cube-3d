@@ -1,7 +1,11 @@
-// Jelly Cube 3D — Minimalist English Cocos Canvas HUD, Home Screen, & Modals
+// Jelly Cube 3D — Home / in-game HUD ported from the web build (web/style.css).
+// The web DOM/CSS is the design source of truth: same layout, colours, radii,
+// type scale and copy. Values below are CSS pixels; they are multiplied by
+// this._u (design units per CSS px) so the UI keeps the web proportions.
 
 import {
     _decorator,
+    BlockInputEvents,
     Button,
     Color,
     Component,
@@ -9,7 +13,8 @@ import {
     Label,
     Node,
     UITransform,
-    Widget,
+    view,
+    sys,
 } from 'cc';
 import {
     CHALLENGE_SIZES,
@@ -35,6 +40,44 @@ type ModalKind =
     | 'hint'
     | 'tutorial';
 
+const PRIVACY_URL = 'https://auth.zhongbei.tech/legal/privacy?app=jellycube3d&locale=en-US';
+
+// web/style.css tokens
+const C = {
+    bg: '#fff6f9',
+    ink: '#34223e',
+    ink2: '#6c4d80',
+    dark: '#3e2a4e',
+    purple: '#7448f5',
+    purple2: '#9b6bff',
+    card: '#f2eaf8',
+    cardSoft: '#f7f3fb',
+    gold: '#ffe8a8',
+    goldInk: '#824a0a',
+    pink: '#ff7298',
+    orange: '#ffa830',
+    white: '#ffffff',
+    line: '#efe7f6',
+    muted: '#846d91',
+    dot: '#8a7599',
+};
+
+function hex(value: string, alpha = 255): Color {
+    const c = new Color();
+    Color.fromHEX(c, value);
+    c.a = alpha;
+    return c;
+}
+
+function lerp(a: number, b: number, t: number): number {
+    return a + (b - a) * t;
+}
+
+function parseHex(value: string): [number, number, number] {
+    const c = hex(value);
+    return [c.r, c.g, c.b];
+}
+
 @ccclass('JellyHUD')
 export class JellyHUD extends Component {
     @property(JellyGameController)
@@ -50,21 +93,32 @@ export class JellyHUD extends Component {
     private _homeRoot!: Node;
     private _gameRoot!: Node;
     private _modalRoot!: Node;
+    private _toastNode!: Node;
+    private _toastLabel!: Label;
+    private _toastToken = 0;
 
-    private _homeCoinsLabel!: Label;
-    private _homePlayLabel!: Label;
-    private _homeDailyLabel!: Label;
-
+    private _homeCoins!: Label;
+    private _homePlay!: Label;
+    private _homeDaily!: Label;
     private _titleLabel!: Label;
     private _subLabel!: Label;
     private _coinsLabel!: Label;
-    private _toastLabel!: Label;
 
-    onLoad(): void {
-        this._buildLayout();
-    }
+    // layout scale: design units per CSS pixel
+    private _u = 1.85;
+    private _w = 720;
+    private _h = 1280;
+
+    private _mb: { card: Node; w: number; cursor: number; items: Node[] } | null = null;
 
     start(): void {
+        // The canvas is aligned to the screen during load; read the visible
+        // size here so the layout follows the real design resolution.
+        const vs = view.getVisibleSize();
+        this._w = Math.max(320, vs.width);
+        this._h = Math.max(568, vs.height);
+        this._u = this._w / 390;
+        this._buildLayout();
         // controller is assigned right after addComponent, so subscribe in
         // start (subscribe also pushes the current state immediately).
         if (this.controller) {
@@ -79,7 +133,7 @@ export class JellyHUD extends Component {
     update(): void {
         if (this._state && !this._state.onHome && !this._state.solved && this.controller) {
             const tStr = formatDurationMs(this.controller.getCurrentElapsedMs());
-            this._formatSubLabel(this._state, tStr);
+            this._setSubLabel(this._state, tStr);
         }
     }
 
@@ -93,387 +147,500 @@ export class JellyHUD extends Component {
         this._refreshHUD();
     }
 
-    // --------------------------------------------------------- UI Primitives
-    private _makePanel(
-        name: string,
-        parent: Node,
-        w: number,
-        h: number,
-        fill: Color,
-        radius = 18,
-    ): { node: Node; gfx: Graphics } {
-        const node = new Node(name);
-        // Runtime-created nodes default to the DEFAULT layer; the UI camera
-        // only draws UI_2D, so inherit the HUD node's layer.
-        node.layer = this.node.layer;
-        node.parent = parent;
-        node.addComponent(UITransform).setContentSize(w, h);
-        const gfx = node.addComponent(Graphics);
-        gfx.fillColor = fill;
-        gfx.roundRect(-w / 2, -h / 2, w, h, radius);
-        gfx.fill();
-        return { node, gfx };
+    // ------------------------------------------------------------ primitives
+    private _uNode(parent: Node, name: string, w: number, h: number): Node {
+        const n = new Node(name);
+        n.layer = this.node.layer;
+        n.parent = parent;
+        n.addComponent(UITransform).setContentSize(w, h);
+        return n;
     }
 
-    private _makeLabel(
+    private _surface(
+        parent: Node,
         name: string,
+        w: number,
+        h: number,
+        r: number,
+        top: string,
+        bottom?: string,
+        shadow = false,
+    ): Node {
+        const n = this._uNode(parent, name, w, h);
+        const u = this._u;
+        if (shadow) {
+            for (let i = 3; i >= 1; i--) {
+                const pad = i * 2.5 * u;
+                const sh = this._uNode(n, 'Sh', w + pad * 2, h + pad * 2);
+                const sg = sh.addComponent(Graphics);
+                sg.fillColor = hex('#48225c', 7);
+                sg.roundRect(-(w + pad * 2) / 2, -(h + pad * 2) / 2 - 3 * u, w + pad * 2, h + pad * 2, r + pad);
+                sg.fill();
+            }
+        }
+        // CSS gradients are approximated with their mid tone; the palette and
+        // radii stay identical to web/style.css.
+        let fill = top;
+        if (bottom && bottom !== top) {
+            const a = parseHex(top);
+            const b = parseHex(bottom);
+            fill = `#${[0, 1, 2]
+                .map((i) => Math.round((a[i] + b[i]) / 2).toString(16).padStart(2, '0'))
+                .join('')}`;
+        }
+        // Fill lives on its own child so the shadow siblings stay behind it
+        // and labels added by callers stay on top.
+        const fillNode = this._uNode(n, 'Fill', w, h);
+        const g = fillNode.addComponent(Graphics);
+        g.fillColor = hex(fill);
+        g.roundRect(-w / 2, -h / 2, w, h, r);
+        g.fill();
+        return n;
+    }
+
+    private _label(
         parent: Node,
         text: string,
-        fontSize: number,
+        size: number,
         color: Color,
-        w = 240,
-        h = 40,
+        w: number,
+        h: number,
+        bold = false,
+        align: 'left' | 'center' = 'center',
     ): Label {
-        const node = new Node(name);
-        node.layer = this.node.layer;
-        node.parent = parent;
-        node.addComponent(UITransform).setContentSize(w, h);
-        const lbl = node.addComponent(Label);
+        const n = this._uNode(parent, 'Lbl', w, h);
+        const lbl = n.addComponent(Label);
+        lbl.useSystemFont = true;
+        lbl.fontFamily = 'PingFang SC';
         lbl.string = text;
-        lbl.fontSize = fontSize;
-        lbl.lineHeight = fontSize + 6;
+        lbl.fontSize = Math.round(size * this._u);
+        lbl.lineHeight = Math.round(size * this._u * 1.3);
         lbl.color = color;
-        lbl.horizontalAlign = Label.HorizontalAlign.CENTER;
+        lbl.isBold = bold;
+        lbl.enableWrapText = true;
+        lbl.overflow = Label.Overflow.CLAMP;
+        lbl.horizontalAlign =
+            align === 'left' ? Label.HorizontalAlign.LEFT : Label.HorizontalAlign.CENTER;
         lbl.verticalAlign = Label.VerticalAlign.CENTER;
         return lbl;
     }
 
-    private _makeButton(
-        name: string,
+    private _textButton(
         parent: Node,
-        w: number,
-        h: number,
         text: string,
-        bg: Color,
-        textColor: Color,
+        size: number,
+        color: Color,
         onClick: () => void,
-        fontSize = 20,
-    ): { node: Node; label: Label } {
-        const { node } = this._makePanel(name, parent, w, h, bg, Math.min(26, h / 2));
-        const label = this._makeLabel('Label', node, text, fontSize, textColor, w - 16, h);
-        const btn = node.addComponent(Button);
+        w = 120,
+        h = 24,
+    ): Node {
+        const n = this._uNode(parent, 'TextBtn', w, h);
+        const lbl = n.addComponent(Label);
+        lbl.useSystemFont = true;
+        lbl.fontFamily = 'PingFang SC';
+        lbl.string = text;
+        lbl.fontSize = Math.round(size * this._u);
+        lbl.lineHeight = Math.round(size * this._u * 1.3);
+        lbl.color = color;
+        lbl.horizontalAlign = Label.HorizontalAlign.CENTER;
+        lbl.verticalAlign = Label.VerticalAlign.CENTER;
+        const btn = n.addComponent(Button);
         btn.transition = Button.Transition.SCALE;
         btn.zoomScale = 0.94;
+        n.on(Button.EventType.CLICK, onClick, this);
+        return n;
+    }
+
+    private _button(
+        parent: Node,
+        name: string,
+        w: number,
+        h: number,
+        r: number,
+        fill: string,
+        text: string,
+        textColor: Color,
+        fontSize: number,
+        onClick: () => void,
+        opts: { gradientTo?: string; bold?: boolean; shadow?: boolean } = {},
+    ): { node: Node; label: Label } {
+        const node = this._surface(parent, name, w, h, r, fill, opts.gradientTo, opts.shadow);
+        const label = this._label(
+            node,
+            text,
+            fontSize,
+            textColor,
+            w - 12 * this._u,
+            h,
+            opts.bold ?? true,
+        );
+        // Single-line button captions shrink instead of wrapping.
+        label.enableWrapText = false;
+        label.overflow = Label.Overflow.SHRINK;
+        const btn = node.addComponent(Button);
+        btn.transition = Button.Transition.SCALE;
+        btn.zoomScale = 0.95;
         node.on(Button.EventType.CLICK, onClick, this);
         return { node, label };
     }
 
-    private _pinWidget(node: Node, top?: number, bottom?: number): void {
-        const w = node.addComponent(Widget);
-        if (top !== undefined) {
-            w.isAlignTop = true;
-            w.top = top;
-        }
-        if (bottom !== undefined) {
-            w.isAlignBottom = true;
-            w.bottom = bottom;
-        }
-    }
-
-    // --------------------------------------------------------- Layout
+    // ---------------------------------------------------------------- layout
     private _buildLayout(): void {
-        this._homeRoot = new Node('HomeRoot');
-        this._homeRoot.layer = this.node.layer;
-        this._homeRoot.parent = this.node;
-        this._homeRoot.addComponent(UITransform).setContentSize(720, 1280);
+        this._homeRoot = this._uNode(this.node, 'HomeRoot', this._w, this._h);
+        this._gameRoot = this._uNode(this.node, 'GameRoot', this._w, this._h);
 
-        this._gameRoot = new Node('GameRoot');
-        this._gameRoot.layer = this.node.layer;
-        this._gameRoot.parent = this.node;
-        this._gameRoot.addComponent(UITransform).setContentSize(720, 1280);
+        this._buildHome();
+        this._buildGameHud();
 
-        this._buildHomeScreen();
-        this._buildInGameHUD();
-
-        this._toastLabel = this._makeLabel(
-            'Toast',
-            this.node,
+        this._toastNode = this._uNode(this.node, 'Toast', this._w, 30 * this._u);
+        this._toastNode.setPosition(0, this._h / 2 - 84 * this._u, 0);
+        const toastBg = this._surface(
+            this._toastNode,
+            'ToastBg',
+            240 * this._u,
+            30 * this._u,
+            15 * this._u,
+            '#ffffff',
+            undefined,
+            true,
+        );
+        toastBg.setPosition(0, 0, 0);
+        this._toastLabel = this._label(
+            toastBg,
             '',
-            20,
-            new Color(74, 48, 92, 255),
-            560,
-            40,
+            13,
+            hex(C.ink2),
+            230 * this._u,
+            30 * this._u,
+            true,
         );
-        this._pinWidget(this._toastLabel.node, 118);
+        this._toastNode.active = false;
 
-        this._modalRoot = new Node('ModalRoot');
-        this._modalRoot.layer = this.node.layer;
-        this._modalRoot.parent = this.node;
+        this._modalRoot = this._uNode(this.node, 'ModalRoot', this._w, this._h);
     }
 
-    private _buildHomeScreen(): void {
-        const badge = this._makePanel(
-            'HomeBadge',
-            this._homeRoot,
-            210,
-            44,
-            new Color(255, 255, 255, 225),
-            22,
-        ).node;
-        badge.setPosition(-215, 575, 0);
-        this._makeLabel('Lbl', badge, 'JELLY CUBE 3D', 18, new Color(116, 72, 245, 255), 200, 40);
+    private _buildHome(): void {
+        const u = this._u;
+        const W = this._w;
+        const H = this._h;
+        const cardW = Math.min(W * 0.94, 420 * u);
+        const left = -W / 2 + 16 * u;
 
-        const coinsPill = this._makeButton(
+        // top row: badge + coins
+        const badge = this._surface(this._homeRoot, 'HomeBadge', 132 * u, 28 * u, 14 * u, '#ffffff');
+        badge.setPosition(left + 66 * u, H / 2 - 34 * u, 0);
+        this._label(badge, 'JELLY CUBE 3D', 12, hex(C.purple), 124 * u, 28 * u, true);
+
+        const coins = this._button(
+            this._homeRoot,
             'HomeCoins',
-            this._homeRoot,
-            135,
-            48,
-            '120',
-            new Color(255, 232, 168, 255),
-            new Color(130, 74, 10, 255),
-            () => {
-                this._modal = 'skins';
-                this._rebuildModal();
-            },
-            20,
+            92 * u,
+            40 * u,
+            20 * u,
+            C.gold,
+            '🍬 120',
+            hex(C.goldInk),
+            14,
+            () => this._open('skins'),
         );
-        coinsPill.node.setPosition(250, 575, 0);
-        this._homeCoinsLabel = coinsPill.label;
+        coins.node.setPosition(W / 2 - 16 * u - 46 * u, H / 2 - 40 * u, 0);
+        this._homeCoins = coins.label;
 
-        const logo = this._makeLabel(
-            'HomeLogo',
+        // hero
+        const logo = this._label(this._homeRoot, 'Jelly Cube 3D', 30, hex(C.ink), cardW, 40 * u, true);
+        logo.node.setPosition(0, H / 2 - 88 * u, 0);
+        const tagline = this._label(
             this._homeRoot,
-            'Jelly Cube 3D',
-            48,
-            new Color(52, 34, 62, 255),
-            560,
-            64,
+            'Squishy Physics · Endgame Puzzles · Global Ranks',
+            13,
+            hex(C.ink2),
+            cardW,
+            20 * u,
+            true,
         );
-        logo.node.setPosition(0, 470, 0);
+        tagline.node.setPosition(0, H / 2 - 113 * u, 0);
 
-        const card = this._makePanel(
+        // actions card
+        const cardH = 192 * u;
+        const cardY = -H / 2 + 26 * u + cardH / 2;
+        const card = this._surface(
+            this._homeRoot,
             'HomeActions',
-            this._homeRoot,
-            650,
-            320,
-            new Color(255, 255, 255, 232),
-            30,
-        ).node;
-        this._pinWidget(card, undefined, 36);
+            cardW,
+            cardH,
+            26 * u,
+            '#ffffff',
+            undefined,
+            true,
+        );
+        card.setPosition(0, cardY, 0);
 
-        const playBtn = this._makeButton(
+        const innerW = cardW - 28 * u;
+        const top = cardH / 2 - 14 * u;
+        const cta = this._button(
+            card,
             'HomePlay',
-            card,
-            600,
-            82,
-            'Play Level 1',
-            new Color(116, 72, 245, 255),
-            new Color(255, 255, 255, 255),
+            innerW,
+            48 * u,
+            18 * u,
+            C.purple,
+            '▶ Play Level 1',
+            hex(C.white),
+            16,
             () => this.controller?.startLevel(this._state?.unlockedLevel ?? 1),
-            26,
+            { gradientTo: C.purple2, bold: true, shadow: true },
         );
-        playBtn.node.setPosition(0, 96, 0);
-        this._homePlayLabel = playBtn.label;
+        cta.node.setPosition(0, top - 24 * u, 0);
+        this._homePlay = cta.label;
 
-        const dailyBtn = this._makeButton(
+        const row2Y = top - 48 * u - 10 * u - 20 * u;
+        const gap2 = 8 * u;
+        const w2 = (innerW - gap2) / 2;
+        const daily = this._button(
+            card,
             'HomeDaily',
-            card,
-            292,
-            68,
-            'Daily (0d streak)',
-            new Color(242, 234, 248, 255),
-            new Color(62, 42, 78, 255),
+            w2,
+            40 * u,
+            14 * u,
+            C.card,
+            '📅 Daily (0d streak)',
+            hex(C.dark),
+            13,
             () => this.controller?.startDailyChallenge(),
-            20,
         );
-        dailyBtn.node.setPosition(-154, 4, 0);
-        this._homeDailyLabel = dailyBtn.label;
+        daily.node.setPosition(-(w2 + gap2) / 2, row2Y, 0);
+        this._homeDaily = daily.label;
 
-        this._makeButton(
+        this._button(
+            card,
             'HomeRanks',
-            card,
-            292,
-            68,
-            'Global Ranks',
-            new Color(242, 234, 248, 255),
-            new Color(62, 42, 78, 255),
-            () => {
-                this._modal = 'leaderboard';
-                this._rebuildModal();
-            },
-            20,
-        ).node.setPosition(154, 4, 0);
+            w2,
+            40 * u,
+            14 * u,
+            C.card,
+            '🏆 Global Ranks',
+            hex(C.dark),
+            13,
+            () => this._open('leaderboard'),
+        ).node.setPosition((w2 + gap2) / 2, row2Y, 0);
 
-        this._makeButton(
+        const row4Y = row2Y - 20 * u - 8 * u - 17 * u;
+        const gap4 = 6 * u;
+        const w4 = (innerW - gap4 * 3) / 4;
+        const x4 = (i: number) => (i - 1.5) * (w4 + gap4);
+        this._button(
+            card,
             'HomeSkins',
+            w4,
+            34 * u,
+            14 * u,
+            C.cardSoft,
+            '🍮 Skins',
+            hex(C.dark),
+            12,
+            () => this._open('skins'),
+        ).node.setPosition(x4(0), row4Y, 0);
+        this._button(
             card,
-            142,
-            60,
-            'Skins',
-            new Color(247, 243, 251, 255),
-            new Color(74, 48, 92, 255),
-            () => {
-                this._modal = 'skins';
-                this._rebuildModal();
-            },
-            18,
-        ).node.setPosition(-228, -76, 0);
-
-        this._makeButton(
             'HomeShare',
-            card,
-            142,
-            60,
-            'Share +15',
-            new Color(247, 243, 251, 255),
-            new Color(74, 48, 92, 255),
+            w4,
+            34 * u,
+            14 * u,
+            C.cardSoft,
+            '📤 Share +15',
+            hex(C.dark),
+            12,
             () => this.controller?.shareForSugar(),
-            18,
-        ).node.setPosition(-76, -76, 0);
-
-        this._makeButton(
+        ).node.setPosition(x4(1), row4Y, 0);
+        this._button(
+            card,
             'HomeRate',
-            card,
-            142,
-            60,
-            'Rate',
-            new Color(247, 243, 251, 255),
-            new Color(74, 48, 92, 255),
+            w4,
+            34 * u,
+            14 * u,
+            C.cardSoft,
+            '⭐ Rate',
+            hex(C.dark),
+            12,
             () => this.controller?.rateApp(),
-            18,
-        ).node.setPosition(76, -76, 0);
-
-        this._makeButton(
-            'HomeAd',
+        ).node.setPosition(x4(2), row4Y, 0);
+        this._button(
             card,
-            142,
-            60,
-            '+30 Sugar',
-            new Color(255, 232, 168, 255),
-            new Color(130, 74, 10, 255),
+            'HomeAd',
+            w4,
+            34 * u,
+            14 * u,
+            C.gold,
+            '🎬 +30 🍬',
+            hex(C.goldInk),
+            12,
             () => this.controller?.claimFreeSugarAd(),
-            18,
-        ).node.setPosition(228, -76, 0);
+        ).node.setPosition(x4(3), row4Y, 0);
+
+        const legalY = row4Y - 17 * u - 10 * u - 8 * u;
+        this._textButton(
+            card,
+            'Privacy Policy',
+            11,
+            hex('#7a628c'),
+            () => sys.openURL(PRIVACY_URL),
+            96 * u,
+            18 * u,
+        ).setPosition(-52 * u, legalY, 0);
+        this._label(card, '·', 11, hex(C.dot), 10 * u, 18 * u).node.setPosition(0, legalY, 0);
+        this._textButton(
+            card,
+            'Terms of Use',
+            11,
+            hex('#7a628c'),
+            () => sys.openURL(PRIVACY_URL),
+            96 * u,
+            18 * u,
+        ).setPosition(52 * u, legalY, 0);
     }
 
-    private _buildInGameHUD(): void {
-        const lvlBtn = this._makeButton(
+    private _buildGameHud(): void {
+        const u = this._u;
+        const W = this._w;
+        const H = this._h;
+        const topY = H / 2 - 36 * u;
+        const margin = 12 * u;
+
+        const levelW = 100 * u;
+        const coinsW = 76 * u;
+        const pauseW = 36 * u;
+        const levelX = -W / 2 + margin + levelW / 2;
+        const pauseX = W / 2 - margin - pauseW / 2;
+        const coinsX = pauseX - pauseW / 2 - 6 * u - coinsW / 2;
+        const levelRight = levelX + levelW / 2;
+        const coinsLeft = coinsX - coinsW / 2;
+        const movesW = Math.max(96 * u, coinsLeft - levelRight - 12 * u);
+        const movesX = (levelRight + coinsLeft) / 2;
+
+        const lvl = this._button(
+            this._gameRoot,
             'LevelPill',
-            this._gameRoot,
-            165,
-            56,
-            'Level 1',
-            new Color(255, 255, 255, 230),
-            new Color(52, 34, 62, 255),
-            () => {
-                this._modal = this._modal === 'levels' ? 'none' : 'levels';
-                this._rebuildModal();
-            },
-            20,
+            levelW,
+            40 * u,
+            20 * u,
+            '#ffffff',
+            'Level 1  ▾',
+            hex(C.ink),
+            13,
+            () => this._open('levels'),
+            { shadow: true },
         );
-        lvlBtn.node.setPosition(-245, 575, 0);
-        this._titleLabel = lvlBtn.label;
+        lvl.node.setPosition(levelX, topY, 0);
+        this._titleLabel = lvl.label;
 
-        const movesPill = this._makePanel(
+        const moves = this._surface(
+            this._gameRoot,
             'MovesPill',
-            this._gameRoot,
-            230,
-            56,
-            new Color(255, 255, 255, 230),
-            28,
-        ).node;
-        movesPill.setPosition(-15, 575, 0);
-        this._subLabel = this._makeLabel(
-            'Sub',
-            movesPill,
-            '0/1 · 00:00.0',
-            19,
-            new Color(108, 77, 128, 255),
-            220,
-            44,
+            movesW,
+            40 * u,
+            20 * u,
+            '#ffffff',
+            undefined,
+            true,
         );
+        moves.setPosition(movesX, topY, 0);
+        this._subLabel = this._label(moves, '0/1 · 00:00.0', 12, hex(C.ink2), movesW - 8 * u, 40 * u, true);
 
-        const coinsBtn = this._makeButton(
+        const coins = this._button(
+            this._gameRoot,
             'CoinsPill',
-            this._gameRoot,
-            135,
-            56,
-            '120',
-            new Color(255, 232, 168, 255),
-            new Color(130, 74, 10, 255),
-            () => {
-                this._modal = 'skins';
-                this._rebuildModal();
-            },
-            20,
+            coinsW,
+            40 * u,
+            20 * u,
+            C.gold,
+            '🍬 120',
+            hex(C.goldInk),
+            13,
+            () => this._open('skins'),
+            { shadow: true },
         );
-        coinsBtn.node.setPosition(185, 575, 0);
-        this._coinsLabel = coinsBtn.label;
+        coins.node.setPosition(coinsX, topY, 0);
+        this._coinsLabel = coins.label;
 
-        this._makeButton(
-            'PauseBtn',
+        this._button(
             this._gameRoot,
-            58,
-            56,
-            '||',
-            new Color(255, 255, 255, 230),
-            new Color(52, 34, 62, 255),
+            'PauseBtn',
+            pauseW,
+            40 * u,
+            20 * u,
+            '#ffffff',
+            '❚❚',
+            hex(C.ink),
+            12,
             () => {
                 this.controller?.setPaused(true);
-                this._modal = 'pause';
-                this._rebuildModal();
+                this._open('pause');
             },
-            22,
-        ).node.setPosition(295, 575, 0);
+            { shadow: true },
+        ).node.setPosition(pauseX, topY, 0);
 
-        const dock = this._makePanel(
-            'BottomDock',
+        const dockW = Math.min(W * 0.94, 440 * u);
+        const dockH = 54 * u;
+        const dock = this._surface(
             this._gameRoot,
-            660,
-            88,
-            new Color(255, 255, 255, 230),
-            28,
-        ).node;
-        this._pinWidget(dock, undefined, 32);
+            'BottomDock',
+            dockW,
+            dockH,
+            22 * u,
+            '#ffffff',
+            undefined,
+            true,
+        );
+        dock.setPosition(0, -H / 2 + 20 * u + dockH / 2, 0);
 
-        this._makeButton(
+        const gap = 8 * u;
+        const innerW = dockW - 16 * u;
+        const w1 = (innerW - gap * 2) / 3.25;
+        const w3 = w1 * 1.25;
+        this._button(
+            dock,
             'UndoBtn',
-            dock,
-            195,
-            64,
-            'Undo',
-            new Color(243, 237, 248, 255),
-            new Color(62, 42, 78, 255),
+            w1,
+            38 * u,
+            16 * u,
+            '#f3edf8',
+            '↩ Undo',
+            hex(C.dark),
+            13,
             () => this.controller?.undoMove(),
-            21,
-        ).node.setPosition(-215, 0, 0);
-
-        this._makeButton(
+        ).node.setPosition(-(innerW / 2) + w1 / 2, 0, 0);
+        this._button(
+            dock,
             'HintBtn',
+            w1,
+            38 * u,
+            16 * u,
+            C.pink,
+            '💡 Hint',
+            hex(C.white),
+            13,
+            () => this._open('hint'),
+        ).node.setPosition(-(innerW / 2) + w1 + gap + w1 / 2, 0, 0);
+        this._button(
             dock,
-            195,
-            64,
-            'Hint',
-            new Color(255, 114, 152, 255),
-            new Color(255, 255, 255, 255),
-            () => {
-                this._modal = 'hint';
-                this._rebuildModal();
-            },
-            21,
-        ).node.setPosition(-8, 0, 0);
-
-        this._makeButton(
             'TutorialBtn',
-            dock,
-            215,
-            64,
-            'Tutorial',
-            new Color(255, 168, 48, 255),
-            new Color(255, 255, 255, 255),
-            () => {
-                this._modal = 'tutorial';
-                this._rebuildModal();
-            },
-            21,
-        ).node.setPosition(208, 0, 0);
+            w3,
+            38 * u,
+            16 * u,
+            C.orange,
+            '🎬 Tutorial',
+            hex(C.white),
+            13,
+            () => this._open('tutorial'),
+        ).node.setPosition(innerW / 2 - w3 / 2, 0, 0);
     }
 
-    private _formatSubLabel(s: GameUIState, tStr: string): void {
+    // ------------------------------------------------------------------ state
+    private _setSubLabel(s: GameUIState, time: string): void {
         if (s.playMode === 'level' && s.level) {
-            this._subLabel.string = `${s.moves}/${s.level.parMoves} · ${tStr}`;
+            this._subLabel.string = `${s.moves}/${s.level.parMoves} · ${time}`;
         } else {
-            this._subLabel.string = `${s.moves} moves · ${tStr}`;
+            this._subLabel.string = `${s.moves} moves · ${time}`;
         }
     }
 
@@ -483,355 +650,634 @@ export class JellyHUD extends Component {
 
         this._homeRoot.active = s.onHome;
         this._gameRoot.active = !s.onHome;
-
-        this._homeCoinsLabel.string = String(s.coins);
-        this._homePlayLabel.string = `Play Level ${s.unlockedLevel}`;
-        this._homeDailyLabel.string = `Daily (${s.dailyStreak}d streak)`;
+        this._homeCoins.string = `🍬 ${s.coins}`;
+        this._homePlay.string = `▶ Play Level ${s.unlockedLevel}`;
+        this._homeDaily.string = `📅 Daily (${s.dailyStreak}d streak)`;
 
         if (s.playMode === 'level' && s.level) {
-            this._titleLabel.string = `Level ${s.level.id}`;
+            this._titleLabel.string = `Level ${s.level.id}  ▾`;
         } else if (s.playMode === 'daily') {
-            this._titleLabel.string = 'Daily';
+            this._titleLabel.string = 'Daily  ▾';
         } else if (s.playMode === 'challenge') {
-            this._titleLabel.string = `${s.challengeSize}×${s.challengeSize} Race`;
+            this._titleLabel.string = `${s.challengeSize}×${s.challengeSize}  ▾`;
         } else {
-            this._titleLabel.string = `Free ${s.freeSize}×${s.freeSize}`;
+            this._titleLabel.string = `Free ${s.freeSize}×${s.freeSize}  ▾`;
+        }
+        this._setSubLabel(s, formatDurationMs(s.elapsedMs));
+        this._coinsLabel.string = `🍬 ${s.coins}`;
+
+        if (s.toast && s.toast !== this._toastLabel.string) {
+            this._toastLabel.string = s.toast;
+            this._toastNode.active = true;
+            const token = ++this._toastToken;
+            this.scheduleOnce(() => {
+                if (token === this._toastToken) this._toastNode.active = false;
+            }, 2.6);
         }
 
-        this._formatSubLabel(s, formatDurationMs(s.elapsedMs));
-        this._coinsLabel.string = String(s.coins);
-        this._toastLabel.string = s.toast;
+        if (this._modal !== 'none') this._rebuildModal();
+    }
 
-        if (this._modal !== 'none') {
-            this._rebuildModal();
-        }
+    // ------------------------------------------------------------------ modal
+    private _open(kind: ModalKind): void {
+        this._modal = kind;
+        this._rebuildModal();
+    }
+
+    private _close(): void {
+        this._modal = 'none';
+        this._rebuildModal();
     }
 
     private _rebuildModal(): void {
         this._modalRoot.removeAllChildren();
+        this._mb = null;
+        if (this.controller) this.controller.uiBlocking = this._modal !== 'none';
         if (this._modal === 'none' || !this._state) return;
 
-        const s = this._state;
-        const card = this._makePanel(
-            'ModalCard',
-            this._modalRoot,
-            620,
-            700,
-            new Color(255, 252, 255, 250),
-            32,
-        ).node;
+        const u = this._u;
+        const backdrop = this._uNode(this._modalRoot, 'Backdrop', this._w, this._h);
+        const g = backdrop.addComponent(Graphics);
+        g.fillColor = hex('#1c1028', 107);
+        g.rect(-this._w / 2, -this._h / 2, this._w, this._h);
+        g.fill();
+        backdrop.addComponent(BlockInputEvents);
+        backdrop.on(Node.EventType.TOUCH_END, () => {});
 
-        if (this._modal === 'pause') {
-            this._makeLabel('Title', card, 'Paused', 32, new Color(56, 34, 72, 255), 400, 46).node.setPosition(0, 210, 0);
-            this._makeButton('Home', card, 460, 74, 'Home', new Color(116, 72, 245, 255), new Color(255, 255, 255, 255), () => {
-                this._modal = 'none';
-                this._rebuildModal();
-                this.controller?.showHome();
-            }, 24).node.setPosition(0, 90, 0);
-            this._makeButton('Restart', card, 460, 68, 'Restart Level', new Color(238, 228, 246, 255), new Color(62, 42, 78, 255), () => {
-                this._modal = 'none';
-                this._rebuildModal();
+        const cardW = Math.min(this._w * 0.92, 400 * u);
+        const card = this._uNode(backdrop, 'ModalCard', cardW, 0);
+        this._mb = { card, w: cardW, cursor: 0, items: [] };
+
+        switch (this._modal) {
+            case 'pause':
+                this._buildPause();
+                break;
+            case 'hint':
+                this._buildHint();
+                break;
+            case 'tutorial':
+                this._buildTutorial();
+                break;
+            case 'win':
+                this._buildWin();
+                break;
+            case 'skins':
+                this._buildSkins();
+                break;
+            case 'leaderboard':
+                this._buildLeaderboard();
+                break;
+            case 'levels':
+                this._buildLevels();
+                break;
+        }
+        this._mbEnd();
+    }
+
+    private _mbAdd(node: Node, h: number, gap = 10): Node {
+        const mb = this._mb!;
+        node.parent = mb.card;
+        node.setPosition(0, -(mb.cursor + h / 2), 0);
+        mb.cursor += h + gap;
+        mb.items.push(node);
+        return node;
+    }
+
+    private _mbEnd(): void {
+        const mb = this._mb;
+        if (!mb) return;
+        const u = this._u;
+        const pad = 20 * u;
+        const H = Math.max(120 * u, mb.cursor - 10 * u + pad * 2);
+        mb.card.getComponent(UITransform)!.setContentSize(mb.w, H);
+        const bg = this._surface(mb.card, 'CardBg', mb.w, H, 26 * u, '#fffcff', undefined, true);
+        bg.setSiblingIndex(0);
+        bg.setPosition(0, 0, 0);
+        const shift = H / 2 - pad;
+        for (const item of mb.items) {
+            item.setPosition(item.position.x, item.position.y + shift, 0);
+        }
+        mb.card.setPosition(0, 0, 0);
+        this._mb = null;
+    }
+
+    private _mbTitle(text: string, size = 20): void {
+        const u = this._u;
+        const node = this._uNode(this._mb!.card, 'Title', this._mb!.w - 40 * u, 28 * u);
+        const lbl = node.addComponent(Label);
+        lbl.useSystemFont = true;
+        lbl.fontFamily = 'PingFang SC';
+        lbl.string = text;
+        lbl.fontSize = Math.round(size * u);
+        lbl.lineHeight = Math.round(size * u * 1.3);
+        lbl.color = hex('#382248');
+        lbl.isBold = true;
+        this._mbAdd(node, 28 * u, 10);
+    }
+
+    private _mbText(text: string, size = 14, color = '#664e76', h = 36): void {
+        const u = this._u;
+        const node = this._uNode(this._mb!.card, 'Text', this._mb!.w - 40 * u, h * u);
+        const lbl = node.addComponent(Label);
+        lbl.useSystemFont = true;
+        lbl.fontFamily = 'PingFang SC';
+        lbl.string = text;
+        lbl.fontSize = Math.round(size * u);
+        lbl.lineHeight = Math.round(size * u * 1.45);
+        lbl.color = hex(color);
+        lbl.enableWrapText = true;
+        lbl.overflow = Label.Overflow.CLAMP;
+        lbl.horizontalAlign = Label.HorizontalAlign.CENTER;
+        lbl.verticalAlign = Label.VerticalAlign.CENTER;
+        this._mbAdd(node, h * u, 8);
+    }
+
+    private _mbButton(
+        text: string,
+        kind: 'primary' | 'gold' | 'secondary',
+        onClick: () => void,
+        h = 44,
+    ): void {
+        const u = this._u;
+        const fill =
+            kind === 'primary' ? C.purple : kind === 'gold' ? C.orange : '#ece4f2';
+        const color = kind === 'secondary' ? hex(C.dark) : hex(C.white);
+        const gradient = kind === 'primary' ? C.purple2 : undefined;
+        const btn = this._button(
+            this._mb!.card,
+            'ModalBtn',
+            this._mb!.w - 40 * u,
+            h * u,
+            16 * u,
+            fill,
+            text,
+            color,
+            15,
+            onClick,
+            { gradientTo: gradient, bold: true },
+        );
+        this._mbAdd(btn.node, h * u, 10);
+    }
+
+    private _mbHeader(title: string, right?: Node): void {
+        const mb = this._mb!;
+        const u = this._u;
+        const rowH = 32 * u;
+        const row = this._uNode(mb.card, 'Header', mb.w - 40 * u, rowH);
+        const lbl = this._label(
+            row,
+            title,
+            20,
+            hex('#382248'),
+            mb.w - 40 * u - 60 * u,
+            rowH,
+            true,
+            'left',
+        );
+        lbl.node.setPosition(-(mb.w - 40 * u) / 2 + (mb.w - 40 * u - 60 * u) / 2, 0, 0);
+        if (right) {
+            right.parent = row;
+            right.setPosition((mb.w - 40 * u) / 2 - right.getComponent(UITransform)!.width / 2, 0, 0);
+        }
+        this._mbAdd(row, rowH, 10);
+    }
+
+    private _closeButton(): Node {
+        const u = this._u;
+        const btn = this._button(
+            this._mb!.card,
+            'CloseX',
+            32 * u,
+            32 * u,
+            16 * u,
+            '#f0e8f8',
+            '✕',
+            hex('#4a305c'),
+            15,
+            () => this._close(),
+        );
+        return btn.node;
+    }
+
+    private _buildPause(): void {
+        const s = this._state!;
+        this._mbTitle('Paused');
+        this._mbButton('🏠 Home', 'primary', () => {
+            this._close();
+            this.controller?.showHome();
+        });
+        this._mbButton('↻ Restart Level', 'secondary', () => {
+            this._close();
+            this.controller?.resetCurrent();
+        });
+        this._mbButton(s.muted ? '🔇 Sound: Off' : '🔊 Sound: On', 'secondary', () => {
+            this.controller?.toggleMute();
+        });
+        this._mbButton('▶ Resume', 'secondary', () => {
+            this._close();
+            this.controller?.setPaused(false);
+        });
+    }
+
+    private _buildHint(): void {
+        const s = this._state!;
+        this._mbTitle('💡 Need a Hint?');
+        this._mbText('Highlights the next slice & rotation direction without hurting your score.', 14, '#664e76', 48);
+        if (s.coins >= 20) {
+            this._mbButton('Use 20 🍬 (Instant)', 'primary', () => {
+                this._close();
+                this.controller?.triggerHint(true);
+            });
+        }
+        this._mbButton('Watch Ad (Free Hint)', 'gold', () => {
+            this._close();
+            this.controller?.triggerHint(false);
+        });
+        this._mbButton('Cancel', 'secondary', () => this._close());
+    }
+
+    private _buildTutorial(): void {
+        const s = this._state!;
+        this._mbTitle('🎬 Solve Tutorial');
+        this._mbText(
+            'Step-by-step solve tutorial.\nTutorial runs do not count toward stars or global rankings.',
+            14,
+            '#664e76',
+            48,
+        );
+        if (s.coins >= 60) {
+            this._mbButton('Use 60 🍬 (Instant)', 'primary', () => {
+                this._close();
+                this.controller?.triggerTutorial(true);
+            });
+        }
+        this._mbButton('Watch Ad (Free Tutorial)', 'gold', () => {
+            this._close();
+            this.controller?.triggerTutorial(false);
+        });
+        this._mbButton('Cancel', 'secondary', () => this._close());
+    }
+
+    private _buildWin(): void {
+        const s = this._state!;
+        const u = this._u;
+        if (s.assistedSolve) {
+            this._mbTitle('Tutorial Complete');
+            this._mbText(
+                'Step-by-step solve tutorial finished!\nTutorial runs do not count toward stars or global rankings.',
+                14,
+                '#664e76',
+                52,
+            );
+            this._mbButton('Try It Yourself', 'primary', () => {
+                this._close();
                 this.controller?.resetCurrent();
-            }, 22).node.setPosition(0, 0, 0);
-            this._makeButton('Sound', card, 460, 68, s.muted ? 'Sound: Off' : 'Sound: On', new Color(238, 228, 246, 255), new Color(62, 42, 78, 255), () => {
-                this.controller?.toggleMute();
-            }, 22).node.setPosition(0, -86, 0);
-            this._makeButton('Resume', card, 460, 74, 'Resume', new Color(238, 228, 246, 255), new Color(62, 42, 78, 255), () => {
-                this._modal = 'none';
-                this._rebuildModal();
-                this.controller?.setPaused(false);
-            }, 24).node.setPosition(0, -180, 0);
+            });
+            this._mbButton('Back to Home', 'secondary', () => {
+                this._close();
+                this.controller?.showHome();
+            });
             return;
         }
 
-        if (this._modal === 'hint') {
-            this._makeLabel('Title', card, 'Need a Hint?', 30, new Color(56, 34, 72, 255), 440, 44).node.setPosition(0, 170, 0);
-            this._makeLabel('Desc', card, 'Shows the next slice direction\nwithout hurting your score.', 22, new Color(102, 78, 118, 255), 480, 76).node.setPosition(0, 80, 0);
-            if (s.coins >= 20) {
-                this._makeButton('UseCoins', card, 440, 70, 'Use 20 Sugar (Instant)', new Color(116, 72, 245, 255), new Color(255, 255, 255, 255), () => {
-                    this._modal = 'none';
-                    this._rebuildModal();
-                    this.controller?.triggerHint(true);
-                }, 22).node.setPosition(0, -25, 0);
-            }
-            this._makeButton('WatchAd', card, 440, 70, 'Watch Ad (Free Hint)', new Color(255, 168, 48, 255), new Color(255, 255, 255, 255), () => {
-                this._modal = 'none';
-                this._rebuildModal();
-                this.controller?.triggerHint(false);
-            }, 22).node.setPosition(0, -110, 0);
-            this._makeButton('Cancel', card, 440, 62, 'Cancel', new Color(236, 228, 242, 255), new Color(62, 42, 78, 255), () => {
-                this._modal = 'none';
-                this._rebuildModal();
-            }, 20).node.setPosition(0, -195, 0);
-            return;
-        }
+        const stars = s.playMode === 'level' && s.level ? computeStars(s.moves, s.level) : 3;
+        this._mbTitle('Jelly Solved!');
+        const starsNode = this._uNode(this._mb!.card, 'Stars', this._mb!.w - 40 * u, 48 * u);
+        const starsLbl = this._label(
+            starsNode,
+            '★'.repeat(stars) + '☆'.repeat(3 - stars),
+            36,
+            hex('#ffb218'),
+            this._mb!.w - 40 * u,
+            48 * u,
+            true,
+        );
+        starsLbl.node.setPosition(0, 0, 0);
+        this._mbAdd(starsNode, 48 * u, 6);
 
-        if (this._modal === 'tutorial') {
-            this._makeLabel('Title', card, 'Solve Tutorial', 30, new Color(56, 34, 72, 255), 440, 44).node.setPosition(0, 175, 0);
-            this._makeLabel('Desc', card, 'Step-by-step solve tutorial.\nTutorial runs are unranked.', 22, new Color(102, 78, 118, 255), 480, 76).node.setPosition(0, 85, 0);
-            if (s.coins >= 60) {
-                this._makeButton('UseCoins', card, 440, 70, 'Use 60 Sugar (Instant)', new Color(116, 72, 245, 255), new Color(255, 255, 255, 255), () => {
-                    this._modal = 'none';
-                    this._rebuildModal();
-                    this.controller?.triggerTutorial(true);
-                }, 22).node.setPosition(0, -25, 0);
-            }
-            this._makeButton('WatchAd', card, 440, 70, 'Watch Ad (Free Tutorial)', new Color(255, 168, 48, 255), new Color(255, 255, 255, 255), () => {
-                this._modal = 'none';
-                this._rebuildModal();
-                this.controller?.triggerTutorial(false);
-            }, 22).node.setPosition(0, -110, 0);
-            this._makeButton('Cancel', card, 440, 62, 'Cancel', new Color(236, 228, 242, 255), new Color(62, 42, 78, 255), () => {
-                this._modal = 'none';
-                this._rebuildModal();
-            }, 20).node.setPosition(0, -195, 0);
-            return;
-        }
-
-        if (this._modal === 'win') {
-            if (s.assistedSolve) {
-                this._makeLabel('Title', card, 'Tutorial Complete', 32, new Color(56, 34, 72, 255), 480, 46).node.setPosition(0, 160, 0);
-                this._makeLabel('Info', card, 'Tutorial runs do not count\ntoward stars or global ranks.', 22, new Color(102, 78, 118, 255), 480, 80).node.setPosition(0, 50, 0);
-                this._makeButton('Retry', card, 440, 72, 'Try It Yourself', new Color(116, 72, 245, 255), new Color(255, 255, 255, 255), () => {
-                    this._modal = 'none';
-                    this._rebuildModal();
-                    this.controller?.resetCurrent();
-                }, 23).node.setPosition(0, -70, 0);
-                this._makeButton('Home', card, 440, 66, 'Back to Home', new Color(236, 228, 242, 255), new Color(62, 42, 78, 255), () => {
-                    this._modal = 'none';
-                    this._rebuildModal();
-                    this.controller?.showHome();
-                }, 22).node.setPosition(0, -160, 0);
-                return;
-            }
-
-            const stars = s.playMode === 'level' && s.level ? computeStars(s.moves, s.level) : 3;
-            const starStr = '★'.repeat(stars) + '☆'.repeat(3 - stars);
-            const reward =
-                s.playMode === 'challenge'
-                    ? s.challengeSize * 8
-                    : s.playMode === 'free'
-                      ? 20
-                      : s.level?.rewardCoins ?? 20;
-
-            this._makeLabel('WinTitle', card, 'Jelly Solved!', 34, new Color(56, 34, 72, 255), 480, 46).node.setPosition(0, 250, 0);
-            this._makeLabel('Stars', card, starStr, 48, new Color(255, 178, 24, 255), 360, 60).node.setPosition(0, 175, 0);
-            this._makeLabel(
-                'WinInfo',
-                card,
-                `Time: ${formatDurationMs(s.elapsedMs)} · ${s.moves} moves · +${reward} Sugar`,
-                22,
-                new Color(102, 78, 118, 255),
-                520,
-                44,
-            ).node.setPosition(0, 100, 0);
-
-            if (s.lastPlayerMoveCount > 0) {
-                this._makeButton('Replay', card, 440, 64, `Watch Replay (${s.lastPlayerMoveCount}m)`, new Color(236, 228, 242, 255), new Color(62, 42, 78, 255), () => {
-                    this._modal = 'none';
-                    this._rebuildModal();
-                    this.controller?.replayLastSolve(() => {
-                        this._modal = 'win';
-                        this._rebuildModal();
-                    });
-                }, 21).node.setPosition(0, 10, 0);
-            }
-
-            if (!this._doubleClaimed) {
-                this._makeButton('DoubleBtn', card, 440, 68, `Watch Ad for 2× Sugar (+${reward})`, new Color(255, 168, 48, 255), new Color(255, 255, 255, 255), async () => {
-                    this._doubleClaimed = true;
-                    await this.controller?.claimDoubleRewardWithAd();
-                    this._rebuildModal();
-                }, 21).node.setPosition(0, -76, 0);
-            }
-
-            this._makeButton(
-                'NextBtn',
-                card,
-                440,
-                74,
-                s.playMode === 'level' && s.level && s.level.id < TOTAL_LEVELS ? 'Next Level' : 'Play Again',
-                new Color(116, 72, 245, 255),
-                new Color(255, 255, 255, 255),
-                () => {
-                    this._modal = 'none';
-                    this._rebuildModal();
-                    if (s.playMode === 'level' && s.level && s.level.id < TOTAL_LEVELS) {
-                        this.controller?.startLevel(s.level.id + 1);
-                    } else {
-                        this.controller?.resetCurrent();
-                    }
-                },
+        if (s.playMode === 'challenge') {
+            const lb = getGlobalLeaderboard(
+                s.challengeSize,
+                s.playerName,
+                s.bestRecords[s.challengeSize],
+            );
+            this._mbText(
+                `🏆 ${s.challengeSize}×${s.challengeSize} Global Rank #${lb.playerRank}`,
+                14,
+                C.purple,
                 24,
-            ).node.setPosition(0, -172, 0);
-            return;
+            );
+        } else if (s.playMode === 'daily' && s.lastDailyRewardLabel) {
+            this._mbText(`🔥 ${s.lastDailyRewardLabel}`, 14, C.purple, 24);
         }
 
-        if (this._modal === 'skins') {
-            this._makeLabel('Title', card, 'Jelly Boutique', 28, new Color(56, 34, 72, 255), 320, 42).node.setPosition(-120, 300, 0);
-            this._makeButton('CloseX', card, 50, 50, '✕', new Color(240, 232, 248, 255), new Color(62, 42, 78, 255), () => {
-                this._modal = 'none';
-                this._rebuildModal();
-            }, 22).node.setPosition(265, 300, 0);
+        const reward =
+            s.playMode === 'challenge'
+                ? s.challengeSize * 8
+                : s.playMode === 'free'
+                  ? 20
+                  : (s.level?.rewardCoins ?? 20);
+        this._mbText(
+            `Time: ${formatDurationMs(s.elapsedMs)} · ${s.moves} moves · +${reward} 🍬`,
+            14,
+            '#664e76',
+            24,
+        );
 
-            const cats: Array<{ id: 'all' | JellySkinCategory; label: string; x: number }> = [
-                { id: 'all', label: 'All', x: -205 },
-                { id: 'jelly', label: 'Jelly', x: -68 },
-                { id: 'art', label: 'AI Art', x: 68 },
-                { id: 'fx', label: 'FX', x: 205 },
-            ];
-            for (const c of cats) {
-                const act = this._skinCat === c.id;
-                this._makeButton(
-                    `Cat_${c.id}`,
-                    card,
-                    126,
-                    44,
-                    c.label,
-                    act ? new Color(116, 72, 245, 255) : new Color(240, 232, 248, 255),
-                    act ? new Color(255, 255, 255, 255) : new Color(62, 42, 78, 255),
-                    () => {
-                        this._skinCat = c.id;
-                        this._rebuildModal();
-                    },
-                    18,
-                ).node.setPosition(c.x, 235, 0);
-            }
-
-            const filtered =
-                this._skinCat === 'all'
-                    ? JELLY_SKINS
-                    : JELLY_SKINS.filter((sk) => sk.category === this._skinCat);
-
-            filtered.slice(0, 6).forEach((skin, idx) => {
-                const col = idx % 2;
-                const row = Math.floor(idx / 2);
-                const x = col === 0 ? -145 : 145;
-                const y = 125 - row * 145;
-                const unlocked = s.unlockedSkins.includes(skin.id);
-                const active = s.activeSkinId === skin.id;
-                const status = active ? 'Equipped' : unlocked ? 'Use Skin' : `${skin.cost} Sugar`;
-
-                this._makeButton(
-                    `Skin_${skin.id}`,
-                    card,
-                    268,
-                    124,
-                    `${skin.name}\n${skin.tag} · ${status}`,
-                    active ? new Color(116, 72, 245, 255) : new Color(242, 234, 248, 255),
-                    active ? new Color(255, 255, 255, 255) : new Color(58, 38, 74, 255),
-                    () => {
-                        this.controller?.selectOrUnlockSkin(skin.id);
-                        this._rebuildModal();
-                    },
-                    19,
-                ).node.setPosition(x, y, 0);
-            });
-            return;
-        }
-
-        if (this._modal === 'leaderboard') {
-            this._makeLabel('Title', card, 'Global Leaderboard', 28, new Color(56, 34, 72, 255), 340, 42).node.setPosition(-110, 300, 0);
-            this._makeButton('CloseX', card, 50, 50, '✕', new Color(240, 232, 248, 255), new Color(62, 42, 78, 255), () => {
-                this._modal = 'none';
-                this._rebuildModal();
-            }, 22).node.setPosition(265, 300, 0);
-
-            CHALLENGE_SIZES.forEach((sz, idx) => {
-                const act = this._lbSize === sz;
-                this._makeButton(
-                    `Tab_${sz}`,
-                    card,
-                    108,
-                    44,
-                    `${sz}×${sz}`,
-                    act ? new Color(116, 72, 245, 255) : new Color(240, 232, 248, 255),
-                    act ? new Color(255, 255, 255, 255) : new Color(62, 42, 78, 255),
-                    () => {
-                        this._lbSize = sz;
-                        this._rebuildModal();
-                    },
-                    18,
-                ).node.setPosition(-230 + idx * 115, 235, 0);
-            });
-
-            const localLb = getGlobalLeaderboard(this._lbSize, s.playerName, s.bestRecords[this._lbSize]);
-            const rowsNode = new Node('Rows');
-            rowsNode.layer = this.node.layer;
-            rowsNode.parent = card;
-            const renderRows = (entries: typeof localLb.entries) => {
-                rowsNode.removeAllChildren();
-                entries.slice(0, 6).forEach((e, idx) => {
-                    this._makeLabel(
-                        `Row_${idx}`,
-                        rowsNode,
-                        `#${e.rank}  ${e.name} (${e.region})  —  ${formatDurationMs(e.timeMs)} · ${e.moves}m`,
-                        19,
-                        e.isPlayer ? new Color(116, 72, 245, 255) : new Color(62, 42, 78, 255),
-                        540,
-                        42,
-                    ).node.setPosition(0, 145 - idx * 54, 0);
+        if (s.lastPlayerMoveCount > 0) {
+            this._mbButton(`🎬 Watch Replay (${s.lastPlayerMoveCount} moves)`, 'secondary', () => {
+                this._close();
+                this.controller?.replayLastSolve(() => {
+                    this._modal = 'win';
+                    this._rebuildModal();
                 });
-            };
-            renderRows(localLb.entries);
-            fetchGlobalLeaderboard(this._lbSize, s.playerId, s.playerName, s.bestRecords[this._lbSize]).then(
-                (live) => {
-                    if (this._modal === 'leaderboard' && rowsNode.isValid) {
-                        renderRows(live.entries);
-                    }
+            });
+        }
+        if (!this._doubleClaimed) {
+            this._mbButton(`Watch Ad for 2× Sugar (+${reward})`, 'gold', async () => {
+                this._doubleClaimed = true;
+                await this.controller?.claimDoubleRewardWithAd();
+                this._rebuildModal();
+            });
+        }
+        if (s.playMode === 'challenge') {
+            this._mbButton('Global Leaderboard', 'secondary', () => this._open('leaderboard'));
+        }
+        this._mbButton(
+            s.playMode === 'level' && s.level && s.level.id < TOTAL_LEVELS ? 'Next Level' : 'Play Again',
+            'primary',
+            () => {
+                this._close();
+                if (s.playMode === 'level' && s.level && s.level.id < TOTAL_LEVELS) {
+                    this.controller?.startLevel(s.level.id + 1);
+                } else {
+                    this.controller?.resetCurrent();
+                }
+            },
+        );
+    }
+
+    private _buildSkins(): void {
+        const s = this._state!;
+        const u = this._u;
+        const mb = this._mb!;
+        this._mbHeader('Jelly Boutique', this._closeButton());
+
+        // category tabs
+        const cats: Array<{ id: 'all' | JellySkinCategory; label: string }> = [
+            { id: 'all', label: 'All (10)' },
+            { id: 'jelly', label: 'Jelly' },
+            { id: 'art', label: 'AI Art' },
+            { id: 'fx', label: 'FX' },
+        ];
+        const tabsW = mb.w - 40 * u;
+        const tabW = (tabsW - 3 * 6 * u) / 4;
+        const tabs = this._uNode(mb.card, 'Tabs', tabsW, 30 * u);
+        cats.forEach((c, i) => {
+            const active = this._skinCat === c.id;
+            const b = this._button(
+                tabs,
+                `Cat_${c.id}`,
+                tabW,
+                30 * u,
+                12 * u,
+                active ? C.purple : '#f0e8f8',
+                c.label,
+                active ? hex(C.white) : hex(C.dark),
+                13,
+                () => {
+                    this._skinCat = c.id;
+                    this._rebuildModal();
                 },
             );
+            b.node.setPosition(-tabsW / 2 + tabW / 2 + i * (tabW + 6 * u), 0, 0);
+        });
+        this._mbAdd(tabs, 30 * u, 10);
 
-            const rec = getRecommendedChallenge(s.unlockedLevel);
-            this._makeButton(
-                'StartRace',
-                card,
-                460,
-                70,
-                `Start ${this._lbSize}×${this._lbSize} Race (${rec.size}×${rec.size} Pick)`,
-                new Color(116, 72, 245, 255),
-                new Color(255, 255, 255, 255),
-                () => {
-                    this._modal = 'none';
-                    this._rebuildModal();
-                    this.controller?.startChallenge(this._lbSize);
-                },
-                22,
-            ).node.setPosition(0, -255, 0);
-            return;
-        }
+        const list =
+            this._skinCat === 'all'
+                ? JELLY_SKINS
+                : JELLY_SKINS.filter((sk) => sk.category === this._skinCat);
+        const cols = 2;
+        const gap = 10 * u;
+        const cellW = (tabsW - gap) / 2;
+        const cellH = 86 * u;
+        for (let i = 0; i < Math.min(list.length, 8); i += cols) {
+            const row = this._uNode(mb.card, 'SkinRow', tabsW, cellH);
+            for (let c = 0; c < cols; c++) {
+                const skin = list[i + c];
+                if (!skin) break;
+                const active = s.activeSkinId === skin.id;
+                const unlocked = s.unlockedSkins.includes(skin.id);
+                const card = this._surface(
+                    row,
+                    `Skin_${skin.id}`,
+                    cellW,
+                    cellH,
+                    18 * u,
+                    active ? '#f6f1ff' : '#f8f3fc',
+                );
+                card.setPosition(-tabsW / 2 + cellW / 2 + c * (cellW + gap), 0, 0);
 
-        if (this._modal === 'levels') {
-            this._makeLabel('Title', card, 'Select Level (1–30)', 28, new Color(56, 34, 72, 255), 360, 42).node.setPosition(-80, 300, 0);
-            this._makeButton('CloseX', card, 50, 50, '✕', new Color(240, 232, 248, 255), new Color(62, 42, 78, 255), () => {
-                this._modal = 'none';
-                this._rebuildModal();
-            }, 22).node.setPosition(265, 300, 0);
+                // palette bar
+                const pal = this._uNode(card, 'Palette', 34 * u, 34 * u);
+                pal.setPosition(-cellW / 2 + 22 * u, cellH / 2 - 24 * u, 0);
+                const pg = pal.addComponent(Graphics);
+                for (let k = 0; k < 3; k++) {
+                    for (let j = 0; j < 2; j++) {
+                        pg.fillColor = hex(skin.colors[(k + j * 3) % skin.colors.length]);
+                        pg.roundRect(
+                            -17 * u + k * 11 * u,
+                            17 * u - 11 * u - j * 11 * u,
+                            10 * u,
+                            10 * u,
+                            2 * u,
+                        );
+                        pg.fill();
+                    }
+                }
 
-            for (let i = 1; i <= 20; i++) {
-                const col = (i - 1) % 5;
-                const row = Math.floor((i - 1) / 5);
-                const x = -220 + col * 110;
-                const y = 190 - row * 105;
-                const unlocked = i <= s.unlockedLevel;
-                const stars = s.levelStars[i] ?? 0;
-                this._makeButton(
-                    `Lvl_${i}`,
+                const tag = this._uNode(card, 'Tag', 42 * u, 16 * u);
+                tag.setPosition(cellW / 2 - 26 * u, cellH / 2 - 18 * u, 0);
+                const tagBg = this._surface(tag, 'TagBg', 42 * u, 16 * u, 8 * u, active ? C.purple : '#efe6fa');
+                tagBg.setPosition(0, 0, 0);
+                this._label(tagBg, skin.tag, 9, active ? hex(C.white) : hex('#673ab7'), 40 * u, 16 * u, true);
+
+                const name = this._label(
                     card,
-                    92,
-                    86,
-                    unlocked ? `${i}\n${'★'.repeat(stars)}` : `${i}\n🔒`,
-                    unlocked ? new Color(240, 232, 248, 255) : new Color(235, 235, 238, 255),
-                    unlocked ? new Color(62, 42, 78, 255) : new Color(150, 150, 160, 255),
+                    skin.name,
+                    12,
+                    hex(C.ink),
+                    cellW - 16 * u,
+                    16 * u,
+                    true,
+                    'left',
+                );
+                name.node.setPosition(0, 2 * u, 0);
+
+                const cta = this._surface(
+                    card,
+                    'Cta',
+                    cellW - 20 * u,
+                    17 * u,
+                    8 * u,
+                    active ? C.purple : unlocked ? '#ede4f7' : C.gold,
+                );
+                cta.setPosition(0, -cellH / 2 + 14 * u, 0);
+                this._label(
+                    cta,
+                    active ? '✓ Equipped' : unlocked ? 'Use Skin' : `🍬 ${skin.cost}`,
+                    10,
+                    active ? hex(C.white) : unlocked ? hex('#4a305c') : hex(C.goldInk),
+                    cellW - 24 * u,
+                    17 * u,
+                    true,
+                );
+
+                card.addComponent(Button);
+                card.on(Button.EventType.CLICK, () => {
+                    this.controller?.selectOrUnlockSkin(skin.id);
+                    this._rebuildModal();
+                });
+            }
+            this._mbAdd(row, cellH, gap);
+        }
+        this._mbText(`Balance: 🍬 ${s.coins} · tap the ad chip for +30`, 11, '#846d91', 18);
+    }
+
+    private _buildLeaderboard(): void {
+        const s = this._state!;
+        const u = this._u;
+        const mb = this._mb!;
+        this._mbHeader('Global Leaderboard', this._closeButton());
+
+        const tabsW = mb.w - 40 * u;
+        const tabW = (tabsW - 4 * 5 * u) / 5;
+        const tabs = this._uNode(mb.card, 'LbTabs', tabsW, 30 * u);
+        CHALLENGE_SIZES.forEach((sz, i) => {
+            const active = this._lbSize === sz;
+            const b = this._button(
+                tabs,
+                `Tab_${sz}`,
+                tabW,
+                30 * u,
+                12 * u,
+                active ? C.purple : '#f0e8f8',
+                `${sz}×${sz}`,
+                active ? hex(C.white) : hex(C.dark),
+                13,
+                () => {
+                    this._lbSize = sz;
+                    this._rebuildModal();
+                },
+            );
+            b.node.setPosition(-tabsW / 2 + tabW / 2 + i * (tabW + 5 * u), 0, 0);
+        });
+        this._mbAdd(tabs, 30 * u, 10);
+
+        const localLb = getGlobalLeaderboard(this._lbSize, s.playerName, s.bestRecords[this._lbSize]);
+        const rowCount = Math.max(1, Math.min(6, localLb.entries.length));
+        const rowH = 26 * u;
+        const rowsH = rowCount * (rowH + 4 * u);
+        const rowsNode = this._uNode(mb.card, 'Rows', tabsW, rowsH);
+        const renderRows = (entries: typeof localLb.entries) => {
+            rowsNode.removeAllChildren();
+            entries.slice(0, 6).forEach((e, idx) => {
+                const row = this._surface(
+                    rowsNode,
+                    `Row_${idx}`,
+                    tabsW,
+                    rowH,
+                    12 * u,
+                    e.isPlayer ? '#ede3ff' : '#f7f3fb',
+                );
+                row.setPosition(0, rowsH / 2 - rowH / 2 - idx * (rowH + 4 * u), 0);
+                this._label(row, `#${e.rank}`, 12, hex(C.purple), 40 * u, rowH, true, 'left').node.setPosition(
+                    -tabsW / 2 + 22 * u,
+                    0,
+                    0,
+                );
+                this._label(
+                    row,
+                    `${e.name} (${e.region})`,
+                    12,
+                    hex(C.ink),
+                    tabsW - 190 * u,
+                    rowH,
+                    false,
+                    'left',
+                ).node.setPosition(-tabsW / 2 + 60 * u + (tabsW - 190 * u) / 2, 0, 0);
+                this._label(
+                    row,
+                    `${formatDurationMs(e.timeMs)} · ${e.moves}m`,
+                    12,
+                    hex(C.ink),
+                    120 * u,
+                    rowH,
+                    true,
+                    'left',
+                ).node.setPosition(tabsW / 2 - 60 * u, 0, 0);
+            });
+        };
+        renderRows(localLb.entries);
+        this._mbAdd(rowsNode, rowsH, 10);
+
+        fetchGlobalLeaderboard(
+            this._lbSize,
+            s.playerId,
+            s.playerName,
+            s.bestRecords[this._lbSize],
+        ).then((live) => {
+            if (this._modal === 'leaderboard' && rowsNode.isValid) renderRows(live.entries);
+        });
+
+        const rec = getRecommendedChallenge(s.unlockedLevel);
+        this._mbButton(`Start ${this._lbSize}×${this._lbSize} Race`, 'primary', () => {
+            this._close();
+            this.controller?.startChallenge(this._lbSize);
+        });
+        this._mbText(`Recommended: ${rec.size}×${rec.size}`, 11, '#846d91', 16);
+    }
+
+    private _buildLevels(): void {
+        const s = this._state!;
+        const u = this._u;
+        const mb = this._mb!;
+        this._mbTitle(`Select Level (1–${TOTAL_LEVELS})`);
+
+        const cols = 5;
+        const gap = 8 * u;
+        const gridW = mb.w - 40 * u;
+        const cellW = (gridW - gap * 4) / cols;
+        const cellH = 44 * u;
+        const rows = Math.ceil(TOTAL_LEVELS / cols);
+        for (let r = 0; r < rows; r++) {
+            const rowNode = this._uNode(mb.card, 'LvlRow', gridW, cellH);
+            for (let c = 0; c < cols; c++) {
+                const id = r * cols + c + 1;
+                if (id > TOTAL_LEVELS) break;
+                const unlocked = id <= s.unlockedLevel;
+                const stars = s.levelStars[id] ?? 0;
+                const cell = this._button(
+                    rowNode,
+                    `Lvl_${id}`,
+                    cellW,
+                    cellH,
+                    12 * u,
+                    unlocked ? '#f0e8f8' : '#ececef',
+                    `${id}  ${unlocked ? '★'.repeat(stars) || '·' : '🔒'}`,
+                    unlocked ? hex(C.dark) : hex('#9a9aa6'),
+                    11,
                     () => {
                         if (!unlocked) return;
-                        this._modal = 'none';
-                        this._rebuildModal();
-                        this.controller?.startLevel(i);
+                        this._close();
+                        this.controller?.startLevel(id);
                     },
-                    19,
-                ).node.setPosition(x, y, 0);
+                );
+                cell.node.setPosition(-gridW / 2 + cellW / 2 + c * (cellW + gap), 0, 0);
             }
+            this._mbAdd(rowNode, cellH, gap);
         }
+        this._mbButton('Close', 'secondary', () => this._close());
     }
 }

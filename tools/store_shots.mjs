@@ -5,13 +5,15 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-// Store screenshots from the web build via headless Chrome + CDP.
-//   node tools/store_shots.mjs   → tests/artifacts/store/*.png
+// Store screenshots from the Cocos web build via headless Chrome + CDP.
+//   CocosCreator --project . --build "configPath=.tmp/build-config-web-store.json"
+//   JELLY_WEB_DIR=build-web-store/web-mobile node tools/store_shots.mjs
+//   → tests/artifacts/store/*.png
 // Two aspect ratios: iPhone 6.7" (1290×2796) and iPad Pro 12.9" (2048×2732).
 // The game is pure canvas; interaction is CDP touch + drag on coordinates.
 
 const ROOT = path.resolve(import.meta.dirname, '..');
-const DIST = path.join(ROOT, 'dist', 'web');
+const DIST = path.join(ROOT, process.env.JELLY_WEB_DIR ?? 'build-web-store/web-mobile');
 const OUT = path.join(ROOT, 'tests', 'artifacts', 'store');
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
@@ -146,6 +148,16 @@ for (const sess of SESSIONS) {
         await sleep(500);
     }
     await sleep(2500);
+
+    // home screen -> Play Level 1 (bottom CTA)
+    const homeCta = { x: sess.cssW / 2, y: sess.cssH * 0.79 };
+    await send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: homeCta.x, y: homeCta.y, radiusX: 2, radiusY: 2, force: 0.6 }],
+    });
+    await sleep(60);
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await sleep(1200);
 
     const cx = sess.cssW / 2;
     const cy = sess.cssH * 0.42;

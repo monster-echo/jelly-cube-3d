@@ -23,7 +23,5 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: TypeScript check, core tests & web build
-        run: |
-          npm test
-          node web/build.mjs
+      - name: TypeScript check & core tests
+        run: npm test

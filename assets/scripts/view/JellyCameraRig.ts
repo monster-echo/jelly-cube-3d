@@ -19,7 +19,7 @@ export class JellyCameraRig extends Component {
     private readonly _lookAt = new Vec3(0, -0.1, 0);
 
     setCubeSize(size: number): void {
-        this._targetDistance = 4.6 + size * 2.2;
+        this._targetDistance = (4.6 + size * 2.2) * 1.3;
     }
 
     orbitBy(deltaX: number, deltaY: number): void {
