@@ -39,7 +39,8 @@ type ModalKind =
     | 'levels'
     | 'leaderboard'
     | 'hint'
-    | 'tutorial';
+    | 'tutorial'
+    | 'menu';
 
 const PRIVACY_URL = 'https://auth.zhongbei.tech/legal/privacy?app=jellycube3d&locale=en-US';
 
@@ -423,7 +424,7 @@ export class JellyHUD extends Component {
         tagline.node.setPosition(0, H / 2 - insetTop - 113 * u, 0);
 
         // actions card
-        const cardH = 192 * u;
+        const cardH = 168 * u;
         const bannerPad = PlatformBridge.isNativeMobile ? 50 * u : 0;
         const cardY = -H / 2 + Math.max(26 * u, insetBottom + 8 * u) + bannerPad + cardH / 2;
         const card = this._surface(
@@ -487,79 +488,19 @@ export class JellyHUD extends Component {
             () => this._open('leaderboard'),
         ).node.setPosition((w2 + gap2) / 2, row2Y, 0);
 
-        const row4Y = row2Y - 20 * u - 8 * u - 17 * u;
-        const gap4 = 6 * u;
-        const w4 = (innerW - gap4 * 3) / 4;
-        const x4 = (i: number) => (i - 1.5) * (w4 + gap4);
+        const menuY = row2Y - 20 * u - 8 * u - 17 * u;
         this._button(
             card,
-            'HomeSkins',
-            w4,
+            'HomeMenu',
+            innerW,
             34 * u,
             14 * u,
             C.cardSoft,
-            '🍮 Skins',
+            '☰ Menu',
             hex(C.dark),
             12,
-            () => this._open('skins'),
-        ).node.setPosition(x4(0), row4Y, 0);
-        this._button(
-            card,
-            'HomeShare',
-            w4,
-            34 * u,
-            14 * u,
-            C.cardSoft,
-            '📤 Share +15',
-            hex(C.dark),
-            12,
-            () => this.controller?.shareForSugar(),
-        ).node.setPosition(x4(1), row4Y, 0);
-        this._button(
-            card,
-            'HomeRate',
-            w4,
-            34 * u,
-            14 * u,
-            C.cardSoft,
-            '⭐ Rate',
-            hex(C.dark),
-            12,
-            () => this.controller?.rateApp(),
-        ).node.setPosition(x4(2), row4Y, 0);
-        this._button(
-            card,
-            'HomeAd',
-            w4,
-            34 * u,
-            14 * u,
-            C.gold,
-            '🎬 +30 🍬',
-            hex(C.goldInk),
-            12,
-            () => this.controller?.claimFreeSugarAd(),
-        ).node.setPosition(x4(3), row4Y, 0);
-
-        const legalY = row4Y - 17 * u - 10 * u - 8 * u;
-        this._textButton(
-            card,
-            'Privacy Policy',
-            11,
-            hex('#7a628c'),
-            () => sys.openURL(PRIVACY_URL),
-            96 * u,
-            18 * u,
-        ).setPosition(-52 * u, legalY, 0);
-        this._label(card, '·', 11, hex(C.dot), 10 * u, 18 * u).node.setPosition(0, legalY, 0);
-        this._textButton(
-            card,
-            'Terms of Use',
-            11,
-            hex('#7a628c'),
-            () => sys.openURL(PRIVACY_URL),
-            96 * u,
-            18 * u,
-        ).setPosition(52 * u, legalY, 0);
+            () => this._open('menu'),
+        ).node.setPosition(0, menuY, 0);
     }
 
     private _buildGameHud(): void {
@@ -577,7 +518,7 @@ export class JellyHUD extends Component {
         const barGap = barW * 0.014;
         const levelW = barW * 0.30;
         const coinsW = barW * 0.21;
-        const pauseW = barW * 0.10;
+        const pauseW = 40 * u;
         const levelX = barLeft + margin + levelW / 2;
         const pauseX = barRight - margin - pauseW / 2;
         const coinsX = pauseX - pauseW / 2 - barGap - coinsW / 2;
@@ -824,6 +765,9 @@ export class JellyHUD extends Component {
             case 'levels':
                 this._buildLevels();
                 break;
+            case 'menu':
+                this._buildMenu();
+                break;
         }
         this._mbEnd();
     }
@@ -951,6 +895,40 @@ export class JellyHUD extends Component {
             () => this._close(),
         );
         return btn.node;
+    }
+
+    private _buildMenu(): void {
+        this._mbTitle('Menu');
+        this._mbButton('🍮 Skins', 'primary', () => this._open('skins'));
+        this._mbButton('📤 Share +15 🍬', 'secondary', () => {
+            this._close();
+            this.controller?.shareForSugar();
+        });
+        this._mbButton('⭐ Rate', 'secondary', () => {
+            this._close();
+            this.controller?.rateApp();
+        });
+        this._mbButton('🎬 +30 🍬', 'gold', () => {
+            this._close();
+            this.controller?.claimFreeSugarAd();
+        });
+        this._mbButton('Privacy & Terms', 'secondary', () => sys.openURL(PRIVACY_URL));
+        this._mbButton('Close', 'secondary', () => this._close());
+    }
+
+    /** QA hook used by JellyBootstrap launch arguments. */
+    debugOpen(kind: string): void {
+        if (
+            kind === 'menu' ||
+            kind === 'skins' ||
+            kind === 'levels' ||
+            kind === 'leaderboard' ||
+            kind === 'pause' ||
+            kind === 'hint' ||
+            kind === 'tutorial'
+        ) {
+            this._open(kind);
+        }
     }
 
     private _buildPause(): void {

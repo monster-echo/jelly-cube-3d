@@ -27,6 +27,8 @@ export class JellyBootstrap extends Component {
     @property(EffectAsset)
     jellyEffect: EffectAsset | null = null;
 
+    private _hud: JellyHUD | null = null;
+
     onLoad(): void {
         const scene = this.node.scene;
 
@@ -80,6 +82,7 @@ export class JellyBootstrap extends Component {
         // 5. HUD
         const hud = this.node.addComponent(JellyHUD);
         hud.controller = ctrl;
+        this._hud = hud;
     }
 
     start(): void {
@@ -97,6 +100,14 @@ export class JellyBootstrap extends Component {
                 this.scheduleOnce(() => {
                     this.node.getComponent(JellyGameController)?.startLevel(Math.min(30, level));
                 }, 0.2);
+            }
+            const screen = native.reflection.callStaticMethod(
+                'AdMobBridge',
+                'launchValue:',
+                'jellyAutoScreen',
+            ) as string;
+            if (screen) {
+                this.scheduleOnce(() => this._hud?.debugOpen(screen), 0.5);
             }
         } catch {
             // Bridge unavailable (preview / older build)

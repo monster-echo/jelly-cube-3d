@@ -531,11 +531,14 @@ export class JellyGameController extends Component {
 
         if (!this._drag || !this.camera) return;
 
+        const totalDx = loc.x - this._drag.startScreen.x;
+        const totalDy = loc.y - this._drag.startScreen.y;
+        const totalDist = Math.hypot(totalDx, totalDy);
+        if (totalDist < 18) return;
         if (this._drag.lockedAxis < 0) {
-            const totalDx = loc.x - this._drag.startScreen.x;
-            const totalDy = loc.y - this._drag.startScreen.y;
-            if (Math.hypot(totalDx, totalDy) < 10) return;
             this._lockSliceAxis(new Vec2(totalDx, totalDy));
+        } else if (totalDist < 80) {
+            this._maybeRelock(new Vec2(totalDx, totalDy));
         }
 
         if (this._drag.lockedAxis >= 0) {
@@ -563,6 +566,19 @@ export class JellyGameController extends Component {
 
         if (drag.lockedAxis < 0) return;
 
+        const travelled = Math.hypot(
+            this._lastTouch.x - drag.startScreen.x,
+            this._lastTouch.y - drag.startScreen.y,
+        );
+        if (travelled < 24) {
+            this.cubeView?.animateMove(
+                { axis: drag.lockedAxis, coordinates: [drag.lockedCoord], quarterTurns: 0 },
+                0,
+                0,
+            );
+            return;
+        }
+
         const quarters = Math.round(drag.angleDeg / 90);
         if (quarters !== 0) {
             const move: JellyMove = {
@@ -585,44 +601,71 @@ export class JellyGameController extends Component {
         this.cameraRig?.zoomBy(-e.getScrollY() * 0.005);
     }
 
-    private _lockSliceAxis(dragVec: Vec2): void {
-        if (!this._drag || !this.camera) return;
-        const n = this._drag.hit.worldNormal;
-        const p = this._drag.hit.worldPoint;
+    // Two in-plane axes can be dragged on the touched face. Score both by how
+    // well the gesture projects onto their screen-space tangents, and only
+    // commit to one once the gesture is long and clearly dominant; this is
+    // what stops a diagonal flick from picking the wrong axis.
+    private _axisScores(dragVec: Vec2): Array<{ axis: number; dir: Vec2; score: number }> {
+        const drag = this._drag;
+        if (!drag || !this.camera) return [];
+        const n = drag.hit.worldNormal;
+        const p = drag.hit.worldPoint;
         const originScreen = this.camera.worldToScreen(p);
 
-        const candidates: number[] = [];
         const nAxis = Math.abs(n.x) > 0.5 ? 0 : Math.abs(n.y) > 0.5 ? 1 : 2;
-        for (let a = 0; a < 3; a++) {
-            if (a !== nAxis) candidates.push(a);
-        }
-
-        let bestAxis = candidates[0];
-        let bestScore = -1;
-        let bestDir = new Vec2(1, 0);
-
-        for (const axis of candidates) {
+        const out: Array<{ axis: number; dir: Vec2; score: number }> = [];
+        for (let axis = 0; axis < 3; axis++) {
+            if (axis === nAxis) continue;
             const axisV = new Vec3(axis === 0 ? 1 : 0, axis === 1 ? 1 : 0, axis === 2 ? 1 : 0);
             const tangent = new Vec3();
             Vec3.cross(tangent, axisV, n);
-            const tipWorld = new Vec3(p.x + tangent.x * 0.5, p.y + tangent.y * 0.5, p.z + tangent.z * 0.5);
+            const tipWorld = new Vec3(
+                p.x + tangent.x * 0.5,
+                p.y + tangent.y * 0.5,
+                p.z + tangent.z * 0.5,
+            );
             const tipScreen = this.camera.worldToScreen(tipWorld);
             const dir = new Vec2(tipScreen.x - originScreen.x, tipScreen.y - originScreen.y);
             const len = dir.length();
             if (len < 0.001) continue;
             dir.multiplyScalar(1 / len);
-
-            const dot = dragVec.x * dir.x + dragVec.y * dir.y;
-            if (Math.abs(dot) > bestScore) {
-                bestScore = Math.abs(dot);
-                bestAxis = axis;
-                bestDir = dir;
-            }
+            out.push({ axis, dir, score: Math.abs(dragVec.x * dir.x + dragVec.y * dir.y) });
         }
+        out.sort((a, b) => b.score - a.score);
+        return out;
+    }
 
-        this._drag.lockedAxis = bestAxis;
-        this._drag.lockedCoord = this._drag.hit.cubie.pos.at(bestAxis);
-        this._drag.screenAxisDir = bestDir;
+    private _applyAxisLock(pick: { axis: number; dir: Vec2 }): void {
+        if (!this._drag) return;
+        this._drag.lockedAxis = pick.axis;
+        this._drag.lockedCoord = this._drag.hit.cubie.pos.at(pick.axis);
+        this._drag.screenAxisDir = pick.dir;
+        PlatformBridge.vibrate('light', this._save?.haptics ?? true);
+    }
+
+    private _lockSliceAxis(dragVec: Vec2): void {
+        const scores = this._axisScores(dragVec);
+        if (scores.length === 0) return;
+        const [best, second] = scores;
+        const dist = dragVec.length();
+        const ratio = best.score / Math.max(0.001, second?.score ?? 0);
+        // Short gesture: needs a clear winner. Longer gesture: accept the best.
+        if (ratio < 1.25 && dist < 42) return;
+        this._applyAxisLock(best);
+    }
+
+    private _maybeRelock(dragVec: Vec2): void {
+        if (!this._drag || this._drag.lockedAxis < 0) return;
+        const locked = this._drag.lockedAxis;
+        const scores = this._axisScores(dragVec);
+        const best = scores[0];
+        if (!best || best.axis === locked) return;
+        const current = scores.find((x) => x.axis === locked);
+        if (!current) return;
+        // Let a deliberate change of direction win before the turn commits.
+        if (best.score > current.score * 1.6 && best.score > 26) {
+            this._applyAxisLock(best);
+        }
     }
 
     private _applyCommittedMove(move: JellyMove, residualAngleDeg: number): void {
