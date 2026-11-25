@@ -524,21 +524,26 @@ export class JellyHUD extends Component {
         const W = this._w;
         const H = this._h;
         const topY = H / 2 - 36 * u;
-        const margin = 12 * u;
         const barW = Math.min(W * 0.94, 440 * u);
         const barLeft = -barW / 2;
         const barRight = barW / 2;
 
-        const levelW = 100 * u;
-        const coinsW = 76 * u;
-        const pauseW = 36 * u;
+        // Relative widths keep the four pills from colliding on narrow
+        // screens; the middle pill absorbs whatever space is left.
+        const margin = barW * 0.025;
+        const barGap = barW * 0.014;
+        const levelW = barW * 0.27;
+        const coinsW = barW * 0.19;
+        const pauseW = barW * 0.10;
         const levelX = barLeft + margin + levelW / 2;
         const pauseX = barRight - margin - pauseW / 2;
-        const coinsX = pauseX - pauseW / 2 - 6 * u - coinsW / 2;
+        const coinsX = pauseX - pauseW / 2 - barGap - coinsW / 2;
         const levelRight = levelX + levelW / 2;
         const coinsLeft = coinsX - coinsW / 2;
-        const movesW = Math.max(96 * u, coinsLeft - levelRight - 12 * u);
-        const movesX = (levelRight + coinsLeft) / 2;
+        const movesLeft = levelRight + barGap;
+        const movesRight = coinsLeft - barGap;
+        const movesW = Math.max(40 * u, movesRight - movesLeft);
+        const movesX = (movesLeft + movesRight) / 2;
 
         const lvl = this._button(
             this._gameRoot,
@@ -567,7 +572,7 @@ export class JellyHUD extends Component {
             true,
         );
         moves.setPosition(movesX, topY, 0);
-        this._subLabel = this._label(moves, '0/1 · 00:00.0', 12, hex(C.ink2), movesW - 8 * u, 40 * u, true);
+        this._subLabel = this._label(moves, '0/1 · 00:00.0', 12, hex(C.ink2), movesW - 8 * u, 40 * u, true, 'center', true);
 
         const coins = this._button(
             this._gameRoot,
