@@ -183,6 +183,9 @@ fi
 echo "== inject AdMob/Haptics bridges into native/engine/ios"
 cp "$ROOT/native/ios/AdMobBridge.mm" "$ROOT/native/ios/HapticsBridge.mm" \
 	"$ROOT/native/ios/AppDelegate.mm" "$ROOT/native/ios/SceneDelegate.mm" "$TEMPLATE_IOS/"
+# Branded launch screen (replaces the Cocos logo the template ships).
+cp "$ROOT/native/ios/LaunchScreenBackground.png" "$TEMPLATE_IOS/LaunchScreenBackground.png"
+cp "$ROOT/native/ios/LaunchScreenBackgroundPortrait.png" "$TEMPLATE_IOS/LaunchScreenBackgroundPortrait.png"
 
 # Class declarations so AppDelegate.mm can call the bridges. Signatures must
 # match AdMobBridge.mm exactly.

@@ -299,7 +299,7 @@ export class JellyHUD extends Component {
         this._buildGameHud();
 
         this._toastNode = this._uNode(this.node, 'Toast', this._w, 30 * this._u);
-        this._toastNode.setPosition(0, this._h / 2 - 84 * this._u, 0);
+        this._toastNode.setPosition(0, this._h / 2 - 116 * this._u, 0);
         const toastBg = this._surface(
             this._toastNode,
             'ToastBg',
@@ -528,22 +528,14 @@ export class JellyHUD extends Component {
         const barLeft = -barW / 2;
         const barRight = barW / 2;
 
-        // Relative widths keep the four pills from colliding on narrow
-        // screens; the middle pill absorbs whatever space is left.
         const margin = barW * 0.025;
         const barGap = barW * 0.014;
-        const levelW = barW * 0.27;
-        const coinsW = barW * 0.19;
+        const levelW = barW * 0.30;
+        const coinsW = barW * 0.21;
         const pauseW = barW * 0.10;
         const levelX = barLeft + margin + levelW / 2;
         const pauseX = barRight - margin - pauseW / 2;
         const coinsX = pauseX - pauseW / 2 - barGap - coinsW / 2;
-        const levelRight = levelX + levelW / 2;
-        const coinsLeft = coinsX - coinsW / 2;
-        const movesLeft = levelRight + barGap;
-        const movesRight = coinsLeft - barGap;
-        const movesW = Math.max(40 * u, movesRight - movesLeft);
-        const movesX = (movesLeft + movesRight) / 2;
 
         const lvl = this._button(
             this._gameRoot,
@@ -561,19 +553,6 @@ export class JellyHUD extends Component {
         lvl.node.setPosition(levelX, topY, 0);
         this._titleLabel = lvl.label;
 
-        const moves = this._surface(
-            this._gameRoot,
-            'MovesPill',
-            movesW,
-            40 * u,
-            20 * u,
-            '#ffffff',
-            undefined,
-            true,
-        );
-        moves.setPosition(movesX, topY, 0);
-        this._subLabel = this._label(moves, '0/1 · 00:00.0', 12, hex(C.ink2), movesW - 8 * u, 40 * u, true, 'center', true);
-
         const coins = this._button(
             this._gameRoot,
             'CoinsPill',
@@ -589,6 +568,30 @@ export class JellyHUD extends Component {
         );
         coins.node.setPosition(coinsX, topY, 0);
         this._coinsLabel = coins.label;
+
+        const movesW = Math.min(190 * u, barW * 0.52);
+        const moves = this._surface(
+            this._gameRoot,
+            'MovesPill',
+            movesW,
+            30 * u,
+            15 * u,
+            '#ffffff',
+            undefined,
+            true,
+        );
+        moves.setPosition(0, topY - 44 * u, 0);
+        this._subLabel = this._label(
+            moves,
+            '0/1 · 00:00.0',
+            12,
+            hex(C.ink2),
+            movesW - 8 * u,
+            30 * u,
+            true,
+            'center',
+            true,
+        );
 
         this._button(
             this._gameRoot,
