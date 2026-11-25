@@ -212,6 +212,7 @@ export class JellyHUD extends Component {
         h: number,
         bold = false,
         align: 'left' | 'center' = 'center',
+        singleLine = false,
     ): Label {
         const n = this._uNode(parent, 'Lbl', w, h);
         const lbl = n.addComponent(Label);
@@ -222,8 +223,8 @@ export class JellyHUD extends Component {
         lbl.lineHeight = Math.round(size * this._u * 1.3);
         lbl.color = color;
         lbl.isBold = bold;
-        lbl.enableWrapText = true;
-        lbl.overflow = Label.Overflow.CLAMP;
+        lbl.enableWrapText = !singleLine;
+        lbl.overflow = singleLine ? Label.Overflow.SHRINK : Label.Overflow.CLAMP;
         lbl.horizontalAlign =
             align === 'left' ? Label.HorizontalAlign.LEFT : Label.HorizontalAlign.CENTER;
         lbl.verticalAlign = Label.VerticalAlign.CENTER;
@@ -354,7 +355,17 @@ export class JellyHUD extends Component {
         this._homeCoins = coins.label;
 
         // hero
-        const logo = this._label(this._homeRoot, 'Jelly Cube 3D', 30, hex(C.ink), cardW, 40 * u, true);
+        const logo = this._label(
+            this._homeRoot,
+            'Jelly Cube 3D',
+            30,
+            hex(C.ink),
+            cardW,
+            46 * u,
+            true,
+            'center',
+            true,
+        );
         logo.node.setPosition(0, H / 2 - 88 * u, 0);
         const tagline = this._label(
             this._homeRoot,
@@ -362,7 +373,9 @@ export class JellyHUD extends Component {
             13,
             hex(C.ink2),
             cardW,
-            20 * u,
+            24 * u,
+            true,
+            'center',
             true,
         );
         tagline.node.setPosition(0, H / 2 - 113 * u, 0);
