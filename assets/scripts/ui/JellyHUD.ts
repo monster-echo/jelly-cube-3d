@@ -28,6 +28,7 @@ import { computeStars, TOTAL_LEVELS } from '../core/JellyLevels';
 import { JELLY_SKINS, JellySkinCategory } from '../core/JellySkins';
 import { GameUIState, JellyGameController } from './JellyGameController';
 import { PlatformBridge } from '../platform/PlatformBridge';
+import { trace } from '../platform/JellyTrace';
 
 const { ccclass, property } = _decorator;
 
@@ -99,6 +100,7 @@ export class JellyHUD extends Component {
     private _toastLabel!: Label;
     private _toastToken = 0;
     private _lastOnHome: boolean | null = null;
+    private _bannerVisible = false;
 
     private _homeCoins!: Label;
     private _homePlay!: Label;
@@ -708,10 +710,16 @@ export class JellyHUD extends Component {
     private _syncBanner(): void {
         // Banner only on the home screen and never under a modal.
         const onHome = this._state?.onHome ?? true;
-        PlatformBridge.setBannerVisible(onHome && this._modal === 'none');
+        const visible = onHome && this._modal === 'none';
+        if (visible !== this._bannerVisible) {
+            this._bannerVisible = visible;
+            trace(`banner:${visible ? 1 : 0}`);
+            PlatformBridge.setBannerVisible(visible);
+        }
     }
 
     private _open(kind: ModalKind): void {
+        trace(`modal:${kind}`);
         this._modal = kind;
         this._rebuildModal();
     }

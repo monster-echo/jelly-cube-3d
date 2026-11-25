@@ -3,12 +3,15 @@
 // assets/resources/audio through cc.AudioSource instead.
 
 import { AudioClip, AudioSource, director, Node, resources, sys } from 'cc';
+import { trace } from './JellyTrace';
 
 class JellyAudioImpl {
     private _ctx: AudioContext | null = null;
     private _muted = false;
-    private _sfx: AudioSource | null = null;
     private _bgm: AudioSource | null = null;
+    private _pool: AudioSource[] = [];
+    private _poolIndex = 0;
+    private _lastSnapAt = 0;
     private _clips = new Map<string, AudioClip>();
     private _loading = new Set<string>();
     private _ready = false;
@@ -27,15 +30,21 @@ class JellyAudioImpl {
     }
 
     private _ensureSources(): void {
-        if (this._sfx && this._bgm) return;
+        if (this._bgm) return;
         const scene = director.getScene();
         if (!scene) return;
         const node = new Node('JellyAudio');
         node.parent = scene;
-        this._sfx = node.addComponent(AudioSource);
         this._bgm = node.addComponent(AudioSource);
         this._bgm.loop = true;
         this._bgm.volume = 0.32;
+        // Small pool: reuse players instead of creating one per shot, which
+        // is what made rapid snaps risky on native.
+        for (let i = 0; i < 3; i++) {
+            const sfxNode = new Node(`Sfx${i}`);
+            sfxNode.parent = node;
+            this._pool.push(sfxNode.addComponent(AudioSource));
+        }
     }
 
     private _load(name: string): void {
@@ -53,11 +62,18 @@ class JellyAudioImpl {
         if (this._muted || !this._native) return;
         this._ensureSources();
         const clip = this._clips.get(name);
-        if (clip && this._sfx) {
-            this._sfx.playOneShot(clip, volume);
+        if (!clip) {
+            this._load(name);
             return;
         }
-        this._load(name);
+        trace(`audio:${name}`);
+        const source = this._pool[this._poolIndex % this._pool.length];
+        if (!source) return;
+        this._poolIndex++;
+        source.stop();
+        source.clip = clip;
+        source.volume = volume;
+        source.play();
     }
 
     private _startMusic(): void {
@@ -100,6 +116,9 @@ class JellyAudioImpl {
     /** Crisp rubbery snap when a slice locks into place. */
     playSnap(pitchOffset = 0): void {
         if (this._native) {
+            const now = Date.now();
+            if (now - this._lastSnapAt < 80) return;
+            this._lastSnapAt = now;
             this._play('snap', 0.5);
             return;
         }

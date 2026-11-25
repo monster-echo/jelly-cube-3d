@@ -49,7 +49,6 @@
     // Game audio should be audible even with the ring switch silenced.
     NSError *audioError = nil;
     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:&audioError];
-    [[AVAudioSession sharedInstance] setActive:YES error:&audioError];
 
     [[SDKWrapper shared] application:application didFinishLaunchingWithOptions:launchOptions];
     appDelegateBridge = [[AppDelegateBridge alloc] init];
