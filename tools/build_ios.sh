@@ -191,6 +191,7 @@ cat > "$TEMPLATE_IOS/AdMobBridge.h" <<'H'
 
 @interface AdMobBridge : NSObject
 + (instancetype)shared;
++ (NSString *)launchValue:(NSString *)key;
 + (void)preloadAds;
 + (void)showRewardedAd:(NSString *)placement callback:(NSString *)cbName;
 + (void)showInterstitialAd:(NSString *)placement;

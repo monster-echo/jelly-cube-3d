@@ -33,6 +33,11 @@ static const NSTimeInterval kInterstitialCooldownSec = 60.0;
     BOOL _rewardEarned;
 }
 
++ (NSString *)launchValue:(NSString *)key {
+    NSString *value = [[NSUserDefaults standardUserDefaults] stringForKey:key];
+    return value ?: @"";
+}
+
 + (instancetype)shared {
     static AdMobBridge *instance = nil;
     static dispatch_once_t onceToken;

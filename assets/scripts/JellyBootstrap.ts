@@ -10,7 +10,9 @@ import {
     Component,
     DirectionalLight,
     EffectAsset,
+    native,
     Node,
+    sys,
     Vec3,
 } from 'cc';
 import { JellyGameController } from './ui/JellyGameController';
@@ -78,5 +80,26 @@ export class JellyBootstrap extends Component {
         // 5. HUD
         const hud = this.node.addComponent(JellyHUD);
         hud.controller = ctrl;
+    }
+
+    start(): void {
+        // QA hook: `devicectl process launch ... -jellyAutoLevel 7` boots
+        // straight into a level so device builds can be screenshotted.
+        if (!sys.isNative || sys.os !== sys.OS.IOS) return;
+        try {
+            const raw = native.reflection.callStaticMethod(
+                'AdMobBridge',
+                'launchValue:',
+                'jellyAutoLevel',
+            ) as string;
+            const level = parseInt(raw, 10);
+            if (level >= 1) {
+                this.scheduleOnce(() => {
+                    this.node.getComponent(JellyGameController)?.startLevel(Math.min(30, level));
+                }, 0.2);
+            }
+        } catch {
+            // Bridge unavailable (preview / older build)
+        }
     }
 }
