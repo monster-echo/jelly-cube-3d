@@ -108,6 +108,9 @@ export class JellyHUD extends Component {
     private _u = 1.85;
     private _w = 720;
     private _h = 1280;
+    // Notch / Dynamic Island and home-indicator strips, in design units.
+    private _insetTop = 0;
+    private _insetBottom = 0;
 
     private _mb: { card: Node; w: number; cursor: number; items: Node[] } | null = null;
 
@@ -123,6 +126,11 @@ export class JellyHUD extends Component {
         const dpr = view.getDevicePixelRatio() || 1;
         const logicalW = Math.max(320, frame.width / Math.max(1, dpr));
         this._u = this._w / logicalW;
+        // false: the default symmetric rect mirrors the larger of top/bottom
+        // onto the other edge, which would push the dock down for a notch.
+        const safe = sys.getSafeAreaRect(false);
+        this._insetTop = Math.max(0, this._h - safe.y - safe.height);
+        this._insetBottom = Math.max(0, safe.y);
         this._buildLayout();
         // controller is assigned right after addComponent, so subscribe in
         // start (subscribe also pushes the current state immediately).
@@ -299,7 +307,7 @@ export class JellyHUD extends Component {
         this._buildGameHud();
 
         this._toastNode = this._uNode(this.node, 'Toast', this._w, 30 * this._u);
-        this._toastNode.setPosition(0, this._h / 2 - 116 * this._u, 0);
+        this._toastNode.setPosition(0, this._h / 2 - this._insetTop - 84 * this._u, 0);
         const toastBg = this._surface(
             this._toastNode,
             'ToastBg',
@@ -329,6 +337,8 @@ export class JellyHUD extends Component {
         const u = this._u;
         const W = this._w;
         const H = this._h;
+        const insetTop = this._insetTop;
+        const insetBottom = this._insetBottom;
         const cardW = Math.min(W * 0.94, 420 * u);
         const topW = cardW;
         const left = -topW / 2;
@@ -336,7 +346,7 @@ export class JellyHUD extends Component {
 
         // top row: badge + coins
         const badge = this._surface(this._homeRoot, 'HomeBadge', 132 * u, 28 * u, 14 * u, '#ffffff');
-        badge.setPosition(left + 66 * u, H / 2 - 34 * u, 0);
+        badge.setPosition(left + 66 * u, H / 2 - insetTop - 34 * u, 0);
         this._label(badge, 'JELLY CUBE 3D', 12, hex(C.purple), 124 * u, 28 * u, true);
 
         const coins = this._button(
@@ -351,7 +361,7 @@ export class JellyHUD extends Component {
             14,
             () => this._open('skins'),
         );
-        coins.node.setPosition(right - 46 * u, H / 2 - 40 * u, 0);
+        coins.node.setPosition(right - 46 * u, H / 2 - insetTop - 40 * u, 0);
         this._homeCoins = coins.label;
 
         // hero
@@ -366,7 +376,7 @@ export class JellyHUD extends Component {
             'center',
             true,
         );
-        logo.node.setPosition(0, H / 2 - 88 * u, 0);
+        logo.node.setPosition(0, H / 2 - insetTop - 88 * u, 0);
         const tagline = this._label(
             this._homeRoot,
             'Squishy Physics · Endgame Puzzles · Global Ranks',
@@ -378,11 +388,11 @@ export class JellyHUD extends Component {
             'center',
             true,
         );
-        tagline.node.setPosition(0, H / 2 - 113 * u, 0);
+        tagline.node.setPosition(0, H / 2 - insetTop - 113 * u, 0);
 
         // actions card
         const cardH = 192 * u;
-        const cardY = -H / 2 + 26 * u + cardH / 2;
+        const cardY = -H / 2 + Math.max(26 * u, insetBottom + 8 * u) + cardH / 2;
         const card = this._surface(
             this._homeRoot,
             'HomeActions',
@@ -523,19 +533,25 @@ export class JellyHUD extends Component {
         const u = this._u;
         const W = this._w;
         const H = this._h;
-        const topY = H / 2 - 36 * u;
+        const topY = H / 2 - this._insetTop - 36 * u;
         const barW = Math.min(W * 0.94, 440 * u);
         const barLeft = -barW / 2;
         const barRight = barW / 2;
 
+        // Relative widths keep the four pills from colliding on narrow
+        // screens; the middle pill absorbs whatever space is left.
         const margin = barW * 0.025;
         const barGap = barW * 0.014;
-        const levelW = barW * 0.30;
-        const coinsW = barW * 0.21;
+        const levelW = barW * 0.27;
+        const coinsW = barW * 0.19;
         const pauseW = barW * 0.10;
         const levelX = barLeft + margin + levelW / 2;
         const pauseX = barRight - margin - pauseW / 2;
         const coinsX = pauseX - pauseW / 2 - barGap - coinsW / 2;
+        const levelRight = levelX + levelW / 2;
+        const coinsLeft = coinsX - coinsW / 2;
+        const movesW = coinsLeft - levelRight - barGap * 2;
+        const movesX = (levelRight + coinsLeft) / 2;
 
         const lvl = this._button(
             this._gameRoot,
@@ -553,6 +569,29 @@ export class JellyHUD extends Component {
         lvl.node.setPosition(levelX, topY, 0);
         this._titleLabel = lvl.label;
 
+        const moves = this._surface(
+            this._gameRoot,
+            'MovesPill',
+            movesW,
+            40 * u,
+            20 * u,
+            '#ffffff',
+            undefined,
+            true,
+        );
+        moves.setPosition(movesX, topY, 0);
+        this._subLabel = this._label(
+            moves,
+            '0/1 · 00:00.0',
+            12,
+            hex(C.ink2),
+            movesW - 8 * u,
+            40 * u,
+            true,
+            'center',
+            true,
+        );
+
         const coins = this._button(
             this._gameRoot,
             'CoinsPill',
@@ -568,30 +607,6 @@ export class JellyHUD extends Component {
         );
         coins.node.setPosition(coinsX, topY, 0);
         this._coinsLabel = coins.label;
-
-        const movesW = Math.min(190 * u, barW * 0.52);
-        const moves = this._surface(
-            this._gameRoot,
-            'MovesPill',
-            movesW,
-            30 * u,
-            15 * u,
-            '#ffffff',
-            undefined,
-            true,
-        );
-        moves.setPosition(0, topY - 44 * u, 0);
-        this._subLabel = this._label(
-            moves,
-            '0/1 · 00:00.0',
-            12,
-            hex(C.ink2),
-            movesW - 8 * u,
-            30 * u,
-            true,
-            'center',
-            true,
-        );
 
         this._button(
             this._gameRoot,
@@ -622,7 +637,11 @@ export class JellyHUD extends Component {
             undefined,
             true,
         );
-        dock.setPosition(0, -H / 2 + 20 * u + dockH / 2, 0);
+        dock.setPosition(
+            0,
+            -H / 2 + Math.max(20 * u, this._insetBottom + 8 * u) + dockH / 2,
+            0,
+        );
 
         const gap = 8 * u;
         const innerW = dockW - 16 * u;
@@ -1056,7 +1075,7 @@ export class JellyHUD extends Component {
 
         // category tabs
         const cats: Array<{ id: 'all' | JellySkinCategory; label: string }> = [
-            { id: 'all', label: 'All (10)' },
+            { id: 'all', label: `All (${JELLY_SKINS.length})` },
             { id: 'jelly', label: 'Jelly' },
             { id: 'art', label: 'AI Art' },
             { id: 'fx', label: 'FX' },
@@ -1093,7 +1112,7 @@ export class JellyHUD extends Component {
         const gap = 10 * u;
         const cellW = (tabsW - gap) / 2;
         const cellH = 86 * u;
-        for (let i = 0; i < Math.min(list.length, 8); i += cols) {
+        for (let i = 0; i < list.length; i += cols) {
             const row = this._uNode(mb.card, 'SkinRow', tabsW, cellH);
             for (let c = 0; c < cols; c++) {
                 const skin = list[i + c];
