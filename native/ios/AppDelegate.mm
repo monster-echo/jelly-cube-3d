@@ -33,6 +33,7 @@
 #import "platform/ios/AppDelegateBridge.h"
 #import "service/SDKWrapper.h"
 #import "AdMobBridge.h"
+#import <AVFoundation/AVFoundation.h>
 
 @implementation AppDelegate
 @synthesize window;
@@ -45,6 +46,10 @@
     [AdMobBridge preloadAds];
     // A puzzle session is short and interactive: keep the display awake.
     [UIApplication sharedApplication].idleTimerDisabled = YES;
+    // Game audio should be audible even with the ring switch silenced.
+    NSError *audioError = nil;
+    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:&audioError];
+    [[AVAudioSession sharedInstance] setActive:YES error:&audioError];
 
     [[SDKWrapper shared] application:application didFinishLaunchingWithOptions:launchOptions];
     appDelegateBridge = [[AppDelegateBridge alloc] init];

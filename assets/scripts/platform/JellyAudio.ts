@@ -1,11 +1,84 @@
-// Jelly Cube 3D — Zero-Asset Procedural ASMR Jelly Audio Synthesizer
+// Jelly Cube 3D — procedural Web Audio on desktop, bundled clips on native.
+// The native runtime has no AudioContext, so iOS/Android play the WAVs in
+// assets/resources/audio through cc.AudioSource instead.
+
+import { AudioClip, AudioSource, director, Node, resources, sys } from 'cc';
 
 class JellyAudioImpl {
     private _ctx: AudioContext | null = null;
     private _muted = false;
+    private _sfx: AudioSource | null = null;
+    private _bgm: AudioSource | null = null;
+    private _clips = new Map<string, AudioClip>();
+    private _loading = new Set<string>();
+    private _ready = false;
+
+    private get _native(): boolean {
+        return sys.isNative;
+    }
+
+    /** Native: preload clips and start the loop. Web: no-op. */
+    init(): void {
+        if (!this._native || this._ready) return;
+        this._ready = true;
+        this._ensureSources();
+        for (const name of ['snap', 'poke', 'bounce', 'solve', 'bgm']) this._load(name);
+        this._startMusic();
+    }
+
+    private _ensureSources(): void {
+        if (this._sfx && this._bgm) return;
+        const scene = director.getScene();
+        if (!scene) return;
+        const node = new Node('JellyAudio');
+        node.parent = scene;
+        this._sfx = node.addComponent(AudioSource);
+        this._bgm = node.addComponent(AudioSource);
+        this._bgm.loop = true;
+        this._bgm.volume = 0.32;
+    }
+
+    private _load(name: string): void {
+        if (this._clips.has(name) || this._loading.has(name)) return;
+        this._loading.add(name);
+        resources.load(`audio/${name}`, AudioClip, (err, clip) => {
+            this._loading.delete(name);
+            if (err || !clip) return;
+            this._clips.set(name, clip);
+            if (name === 'bgm') this._startMusic();
+        });
+    }
+
+    private _play(name: string, volume: number): void {
+        if (this._muted || !this._native) return;
+        this._ensureSources();
+        const clip = this._clips.get(name);
+        if (clip && this._sfx) {
+            this._sfx.playOneShot(clip, volume);
+            return;
+        }
+        this._load(name);
+    }
+
+    private _startMusic(): void {
+        if (!this._native || this._muted) return;
+        this._ensureSources();
+        const clip = this._clips.get('bgm');
+        if (!clip) {
+            this._load('bgm');
+            return;
+        }
+        if (this._bgm && !this._bgm.playing) {
+            this._bgm.clip = clip;
+            this._bgm.play();
+        }
+    }
 
     setMuted(muted: boolean): void {
         this._muted = muted;
+        if (!this._native || !this._bgm) return;
+        if (muted) this._bgm.stop();
+        else this._startMusic();
     }
 
     private _ensureCtx(): AudioContext | null {
@@ -26,6 +99,10 @@ class JellyAudioImpl {
 
     /** Crisp rubbery snap when a slice locks into place. */
     playSnap(pitchOffset = 0): void {
+        if (this._native) {
+            this._play('snap', 0.5);
+            return;
+        }
         const ctx = this._ensureCtx();
         if (!ctx) return;
         const now = ctx.currentTime;
@@ -49,6 +126,10 @@ class JellyAudioImpl {
 
     /** Squishy wet pop when poking a jelly cubelet. */
     playPoke(): void {
+        if (this._native) {
+            this._play('poke', 0.5);
+            return;
+        }
         const ctx = this._ensureCtx();
         if (!ctx) return;
         const now = ctx.currentTime;
@@ -71,6 +152,10 @@ class JellyAudioImpl {
 
     /** Bouncy thud when dropping the jelly cube onto the plate. */
     playBounce(): void {
+        if (this._native) {
+            this._play('bounce', 0.55);
+            return;
+        }
         const ctx = this._ensureCtx();
         if (!ctx) return;
         const now = ctx.currentTime;
@@ -91,6 +176,10 @@ class JellyAudioImpl {
 
     /** Bright celebratory chord when a level is solved. */
     playSolveChord(): void {
+        if (this._native) {
+            this._play('solve', 0.55);
+            return;
+        }
         const ctx = this._ensureCtx();
         if (!ctx) return;
         const notes = [523.25, 659.25, 783.99, 1046.5];

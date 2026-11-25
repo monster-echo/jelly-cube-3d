@@ -15,6 +15,7 @@ import {
     sys,
     Vec3,
 } from 'cc';
+import { JellyAudio } from './platform/JellyAudio';
 import { JellyGameController } from './ui/JellyGameController';
 import { JellyHUD } from './ui/JellyHUD';
 import { JellyCameraRig } from './view/JellyCameraRig';
@@ -83,6 +84,9 @@ export class JellyBootstrap extends Component {
         const hud = this.node.addComponent(JellyHUD);
         hud.controller = ctrl;
         this._hud = hud;
+
+        // Native has no Web Audio; preload the bundled clips + loop here.
+        JellyAudio.init();
     }
 
     start(): void {
