@@ -117,7 +117,12 @@ export class JellyHUD extends Component {
         const vs = view.getVisibleSize();
         this._w = Math.max(320, vs.width);
         this._h = Math.max(568, vs.height);
-        this._u = this._w / 390;
+        // Design units per logical screen point: keeps the web's CSS-pixel
+        // scale on phones and stops the UI from inflating on wide windows.
+        const frame = view.getFrameSize();
+        const dpr = view.getDevicePixelRatio() || 1;
+        const logicalW = Math.max(320, frame.width / Math.max(1, dpr));
+        this._u = this._w / logicalW;
         this._buildLayout();
         // controller is assigned right after addComponent, so subscribe in
         // start (subscribe also pushes the current state immediately).
@@ -324,7 +329,9 @@ export class JellyHUD extends Component {
         const W = this._w;
         const H = this._h;
         const cardW = Math.min(W * 0.94, 420 * u);
-        const left = -W / 2 + 16 * u;
+        const topW = cardW;
+        const left = -topW / 2;
+        const right = topW / 2;
 
         // top row: badge + coins
         const badge = this._surface(this._homeRoot, 'HomeBadge', 132 * u, 28 * u, 14 * u, '#ffffff');
@@ -343,7 +350,7 @@ export class JellyHUD extends Component {
             14,
             () => this._open('skins'),
         );
-        coins.node.setPosition(W / 2 - 16 * u - 46 * u, H / 2 - 40 * u, 0);
+        coins.node.setPosition(right - 46 * u, H / 2 - 40 * u, 0);
         this._homeCoins = coins.label;
 
         // hero
@@ -505,12 +512,15 @@ export class JellyHUD extends Component {
         const H = this._h;
         const topY = H / 2 - 36 * u;
         const margin = 12 * u;
+        const barW = Math.min(W * 0.94, 440 * u);
+        const barLeft = -barW / 2;
+        const barRight = barW / 2;
 
         const levelW = 100 * u;
         const coinsW = 76 * u;
         const pauseW = 36 * u;
-        const levelX = -W / 2 + margin + levelW / 2;
-        const pauseX = W / 2 - margin - pauseW / 2;
+        const levelX = barLeft + margin + levelW / 2;
+        const pauseX = barRight - margin - pauseW / 2;
         const coinsX = pauseX - pauseW / 2 - 6 * u - coinsW / 2;
         const levelRight = levelX + levelW / 2;
         const coinsLeft = coinsX - coinsW / 2;
