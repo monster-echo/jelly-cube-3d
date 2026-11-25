@@ -684,7 +684,7 @@ export class JellyHUD extends Component {
             38 * u,
             16 * u,
             '#f3edf8',
-            '↩ Undo',
+            '↶ Undo',
             hex(C.dark),
             13,
             () => this.controller?.undoMove(),
