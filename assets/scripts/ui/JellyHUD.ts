@@ -378,9 +378,20 @@ export class JellyHUD extends Component {
         const right = topW / 2;
 
         // top row: badge + coins
-        const badge = this._surface(this._homeRoot, 'HomeBadge', 132 * u, 28 * u, 14 * u, '#ffffff');
-        badge.setPosition(left + 66 * u, H / 2 - insetTop - 34 * u, 0);
-        this._label(badge, 'JELLY CUBE 3D', 12, hex(C.purple), 124 * u, 28 * u, true);
+        const menuBtn = this._button(
+            this._homeRoot,
+            'HomeMenu',
+            104 * u,
+            36 * u,
+            18 * u,
+            '#ffffff',
+            '☰ Menu',
+            hex(C.purple),
+            13,
+            () => this._open('menu'),
+            { shadow: true },
+        );
+        menuBtn.node.setPosition(left + 52 * u, H / 2 - insetTop - 38 * u, 0);
 
         const coins = this._button(
             this._homeRoot,
@@ -424,7 +435,7 @@ export class JellyHUD extends Component {
         tagline.node.setPosition(0, H / 2 - insetTop - 113 * u, 0);
 
         // actions card
-        const cardH = 168 * u;
+        const cardH = 126 * u;
         const bannerPad = PlatformBridge.isNativeMobile ? 50 * u : 0;
         const cardY = -H / 2 + Math.max(26 * u, insetBottom + 8 * u) + bannerPad + cardH / 2;
         const card = this._surface(
@@ -488,19 +499,6 @@ export class JellyHUD extends Component {
             () => this._open('leaderboard'),
         ).node.setPosition((w2 + gap2) / 2, row2Y, 0);
 
-        const menuY = row2Y - 20 * u - 8 * u - 17 * u;
-        this._button(
-            card,
-            'HomeMenu',
-            innerW,
-            34 * u,
-            14 * u,
-            C.cardSoft,
-            '☰ Menu',
-            hex(C.dark),
-            12,
-            () => this._open('menu'),
-        ).node.setPosition(0, menuY, 0);
     }
 
     private _buildGameHud(): void {
@@ -918,6 +916,10 @@ export class JellyHUD extends Component {
 
     /** QA hook used by JellyBootstrap launch arguments. */
     debugOpen(kind: string): void {
+        if (!this._state) {
+            this.scheduleOnce(() => this.debugOpen(kind), 0.2);
+            return;
+        }
         if (
             kind === 'menu' ||
             kind === 'skins' ||
