@@ -553,7 +553,8 @@ export class JellyGameController extends Component {
 
     private _onTouchEnd(): void {
         this._orbiting = false;
-        PlatformBridge.setBannerVisible(true);
+        // Banner belongs to the home screen only; in-game it covered the dock.
+        PlatformBridge.setBannerVisible(this._onHome && !this.uiBlocking);
 
         if (!this._drag) return;
         const drag = this._drag;

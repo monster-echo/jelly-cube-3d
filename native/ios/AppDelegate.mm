@@ -43,6 +43,8 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     [AdMobBridge preloadAds];
+    // A puzzle session is short and interactive: keep the display awake.
+    [UIApplication sharedApplication].idleTimerDisabled = YES;
 
     [[SDKWrapper shared] application:application didFinishLaunchingWithOptions:launchOptions];
     appDelegateBridge = [[AppDelegateBridge alloc] init];

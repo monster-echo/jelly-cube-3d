@@ -27,6 +27,7 @@ import {
 import { computeStars, TOTAL_LEVELS } from '../core/JellyLevels';
 import { JELLY_SKINS, JellySkinCategory } from '../core/JellySkins';
 import { GameUIState, JellyGameController } from './JellyGameController';
+import { PlatformBridge } from '../platform/PlatformBridge';
 
 const { ccclass, property } = _decorator;
 
@@ -96,6 +97,7 @@ export class JellyHUD extends Component {
     private _toastNode!: Node;
     private _toastLabel!: Label;
     private _toastToken = 0;
+    private _lastOnHome: boolean | null = null;
 
     private _homeCoins!: Label;
     private _homePlay!: Label;
@@ -186,9 +188,19 @@ export class JellyHUD extends Component {
                 const pad = i * 2.5 * u;
                 const sh = this._uNode(n, 'Sh', w + pad * 2, h + pad * 2);
                 const sg = sh.addComponent(Graphics);
-                sg.fillColor = hex('#48225c', 7);
-                sg.roundRect(-(w + pad * 2) / 2, -(h + pad * 2) / 2 - 3 * u, w + pad * 2, h + pad * 2, r + pad);
+                const draw = {
+                    x: -(w + pad * 2) / 2,
+                    y: -(h + pad * 2) / 2 - 3 * u,
+                    w: w + pad * 2,
+                    h: h + pad * 2,
+                    r: r + pad,
+                    color: '#48225c',
+                    alpha: 7,
+                };
+                sg.fillColor = hex(draw.color, draw.alpha);
+                sg.roundRect(draw.x, draw.y, draw.w, draw.h, draw.r);
                 sg.fill();
+                (sh as unknown as { __draw?: typeof draw }).__draw = draw;
             }
         }
         // CSS gradients are approximated with their mid tone; the palette and
@@ -205,10 +217,30 @@ export class JellyHUD extends Component {
         // and labels added by callers stay on top.
         const fillNode = this._uNode(n, 'Fill', w, h);
         const g = fillNode.addComponent(Graphics);
-        g.fillColor = hex(fill);
-        g.roundRect(-w / 2, -h / 2, w, h, r);
+        const draw = { x: -w / 2, y: -h / 2, w, h, r, color: fill, alpha: 255 };
+        g.fillColor = hex(draw.color, draw.alpha);
+        g.roundRect(draw.x, draw.y, draw.w, draw.h, draw.r);
         g.fill();
+        (fillNode as unknown as { __draw?: typeof draw }).__draw = draw;
         return n;
+    }
+
+    // Cocos native can keep a Graphics mesh stale when its root is activated
+    // after the first frame; replaying the stored draw commands fixes it.
+    private _redrawGraphics(root: Node): void {
+        const stack: Node[] = [root];
+        while (stack.length > 0) {
+            const node = stack.pop()!;
+            const draw = (node as unknown as { __draw?: { x: number; y: number; w: number; h: number; r: number; color: string; alpha: number } }).__draw;
+            const gfx = node.getComponent(Graphics);
+            if (draw && gfx) {
+                gfx.clear();
+                gfx.fillColor = hex(draw.color, draw.alpha);
+                gfx.roundRect(draw.x, draw.y, draw.w, draw.h, draw.r);
+                gfx.fill();
+            }
+            stack.push(...node.children);
+        }
     }
 
     private _label(
@@ -392,7 +424,8 @@ export class JellyHUD extends Component {
 
         // actions card
         const cardH = 192 * u;
-        const cardY = -H / 2 + Math.max(26 * u, insetBottom + 8 * u) + cardH / 2;
+        const bannerPad = PlatformBridge.isNativeMobile ? 50 * u : 0;
+        const cardY = -H / 2 + Math.max(26 * u, insetBottom + 8 * u) + bannerPad + cardH / 2;
         const card = this._surface(
             this._homeRoot,
             'HomeActions',
@@ -697,6 +730,11 @@ export class JellyHUD extends Component {
 
         this._homeRoot.active = s.onHome;
         this._gameRoot.active = !s.onHome;
+        if (this._lastOnHome !== s.onHome) {
+            const root = s.onHome ? this._homeRoot : this._gameRoot;
+            this.scheduleOnce(() => this._redrawGraphics(root), 0);
+        }
+        this._lastOnHome = s.onHome;
         this._homeCoins.string = `🍬 ${s.coins}`;
         this._homePlay.string = `▶ Play Level ${s.unlockedLevel}`;
         this._homeDaily.string = `📅 Daily (${s.dailyStreak}d streak)`;
@@ -713,6 +751,8 @@ export class JellyHUD extends Component {
         this._setSubLabel(s, formatDurationMs(s.elapsedMs));
         this._coinsLabel.string = `🍬 ${s.coins}`;
 
+        this._syncBanner();
+
         if (s.toast && s.toast !== this._toastLabel.string) {
             this._toastLabel.string = s.toast;
             this._toastNode.active = true;
@@ -726,6 +766,12 @@ export class JellyHUD extends Component {
     }
 
     // ------------------------------------------------------------------ modal
+    private _syncBanner(): void {
+        // Banner only on the home screen and never under a modal.
+        const onHome = this._state?.onHome ?? true;
+        PlatformBridge.setBannerVisible(onHome && this._modal === 'none');
+    }
+
     private _open(kind: ModalKind): void {
         this._modal = kind;
         this._rebuildModal();
@@ -740,6 +786,7 @@ export class JellyHUD extends Component {
         this._modalRoot.removeAllChildren();
         this._mb = null;
         if (this.controller) this.controller.uiBlocking = this._modal !== 'none';
+        this._syncBanner();
         if (this._modal === 'none' || !this._state) return;
 
         const u = this._u;
