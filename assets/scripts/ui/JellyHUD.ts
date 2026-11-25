@@ -307,7 +307,7 @@ export class JellyHUD extends Component {
         this._buildGameHud();
 
         this._toastNode = this._uNode(this.node, 'Toast', this._w, 30 * this._u);
-        this._toastNode.setPosition(0, this._h / 2 - this._insetTop - 84 * this._u, 0);
+        this._toastNode.setPosition(0, this._h / 2 - this._insetTop - 116 * this._u, 0);
         const toastBg = this._surface(
             this._toastNode,
             'ToastBg',
@@ -542,17 +542,12 @@ export class JellyHUD extends Component {
         // screens; the middle pill absorbs whatever space is left.
         const margin = barW * 0.025;
         const barGap = barW * 0.014;
-        const levelW = barW * 0.27;
-        const coinsW = barW * 0.19;
+        const levelW = barW * 0.30;
+        const coinsW = barW * 0.21;
         const pauseW = barW * 0.10;
         const levelX = barLeft + margin + levelW / 2;
         const pauseX = barRight - margin - pauseW / 2;
         const coinsX = pauseX - pauseW / 2 - barGap - coinsW / 2;
-        const levelRight = levelX + levelW / 2;
-        const coinsLeft = coinsX - coinsW / 2;
-        const movesW = coinsLeft - levelRight - barGap * 2;
-        const movesX = (levelRight + coinsLeft) / 2;
-
         const lvl = this._button(
             this._gameRoot,
             'LevelPill',
@@ -568,29 +563,6 @@ export class JellyHUD extends Component {
         );
         lvl.node.setPosition(levelX, topY, 0);
         this._titleLabel = lvl.label;
-
-        const moves = this._surface(
-            this._gameRoot,
-            'MovesPill',
-            movesW,
-            40 * u,
-            20 * u,
-            '#ffffff',
-            undefined,
-            true,
-        );
-        moves.setPosition(movesX, topY, 0);
-        this._subLabel = this._label(
-            moves,
-            '0/1 · 00:00.0',
-            12,
-            hex(C.ink2),
-            movesW - 8 * u,
-            40 * u,
-            true,
-            'center',
-            true,
-        );
 
         const coins = this._button(
             this._gameRoot,
@@ -624,6 +596,31 @@ export class JellyHUD extends Component {
             },
             { shadow: true },
         ).node.setPosition(pauseX, topY, 0);
+
+        // Move count + timer on a second row, so the bar stays uncluttered.
+        const movesW = Math.min(190 * u, barW * 0.52);
+        const moves = this._surface(
+            this._gameRoot,
+            'MovesPill',
+            movesW,
+            30 * u,
+            15 * u,
+            '#ffffff',
+            undefined,
+            true,
+        );
+        moves.setPosition(0, topY - 44 * u, 0);
+        this._subLabel = this._label(
+            moves,
+            '0/1 · 00:00.0',
+            12,
+            hex(C.ink2),
+            movesW - 8 * u,
+            30 * u,
+            true,
+            'center',
+            true,
+        );
 
         const dockW = Math.min(W * 0.94, 440 * u);
         const dockH = 54 * u;
