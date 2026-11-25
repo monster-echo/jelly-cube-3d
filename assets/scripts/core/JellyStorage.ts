@@ -1,5 +1,7 @@
 // Jelly Cube 3D — Cross-platform Save & Progress Persistence.
 
+import { sys } from 'cc';
+
 export interface SizeRecord {
     timeMs: number;
     moves: number;
@@ -52,23 +54,42 @@ export function defaultSaveData(): JellySaveData {
 
 let memoryFallback: string | null = null;
 
-function readRaw(): string | null {
+// On native there is no window.localStorage; cc.sys.localStorage is the
+// platform-backed store, so progress survives relaunches on iOS/Android too.
+function storage(): Storage | null {
+    try {
+        if (sys && sys.localStorage) return sys.localStorage;
+    } catch {
+        // Ignore
+    }
     try {
         if (typeof globalThis !== 'undefined' && 'localStorage' in globalThis && globalThis.localStorage) {
-            return globalThis.localStorage.getItem(STORAGE_KEY);
+            return globalThis.localStorage as Storage;
         }
     } catch {
-        // Ignore restricted storage environments
+        // Ignore
+    }
+    return null;
+}
+
+function readRaw(): string | null {
+    const s = storage();
+    if (s) {
+        try {
+            return s.getItem(STORAGE_KEY);
+        } catch {
+            // Ignore restricted storage environments
+        }
     }
     return memoryFallback;
 }
 
 function writeRaw(json: string): void {
     memoryFallback = json;
+    const s = storage();
+    if (!s) return;
     try {
-        if (typeof globalThis !== 'undefined' && 'localStorage' in globalThis && globalThis.localStorage) {
-            globalThis.localStorage.setItem(STORAGE_KEY, json);
-        }
+        s.setItem(STORAGE_KEY, json);
     } catch {
         // Ignore
     }
