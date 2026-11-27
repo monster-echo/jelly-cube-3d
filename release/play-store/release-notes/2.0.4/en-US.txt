@@ -1,0 +1,4 @@
+Version 2.0.4 updates:
+• Fixed app display name ("Jelly Cube 3D") and locked portrait orientation on Android and iOS
+• Added 16 KB page size support, R8 optimization, and updated AndroidX dependencies
+• Updated default jelly cube theme and store visual polish

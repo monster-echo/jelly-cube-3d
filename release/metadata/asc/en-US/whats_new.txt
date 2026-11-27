@@ -1,0 +1,7 @@
+Version 2.0.0 highlights:
+• Rebuilt around the new jelly material system — plush, liquid, and sand looks
+• 10 collectible skins, including AI art packs and the 7-day streak night glow
+• Daily Challenge with global seeds and streak rewards
+• Free play expanded to 5×5, 9×9, and 10×10 jelly cubes
+• Tuned hint costs and rewarded-video bonuses
+• Smoother 3D rotation and faster level loading

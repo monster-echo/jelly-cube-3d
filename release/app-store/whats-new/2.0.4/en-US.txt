@@ -1,0 +1,3 @@
+Version 2.0.4 updates:
+• Fixed app display name ("Jelly Cube 3D") and locked portrait orientation
+• Updated default jelly cube theme and launch experience
