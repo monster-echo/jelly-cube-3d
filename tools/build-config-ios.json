@@ -5,6 +5,25 @@
   "debug": false,
   "md5Cache": true,
   "sourceMaps": false,
+  "splashScreen": {
+    "displayRatio": 0.55,
+    "totalTime": 0,
+    "watermarkLocation": "default",
+    "autoFit": true,
+    "logo": {
+      "type": "custom",
+      "image": "settings/splash_logo.png"
+    },
+    "background": {
+      "type": "color",
+      "color": {
+        "x": 0.9569,
+        "y": 0.9255,
+        "z": 0.9765,
+        "w": 1
+      }
+    }
+  },
   "packages": {
     "ios": {
       "packageName": "tech.zhongbei.jellycube3d"

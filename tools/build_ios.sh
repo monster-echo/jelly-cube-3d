@@ -114,11 +114,14 @@ fi
 
 mkdir -p "$ROOT/.tmp"
 RESOLVED="$ROOT/.tmp/build-config-ios.json"
-python3 - "$ROOT/tools/build-config-ios.json" "$RESOLVED" <<'PY'
+python3 - "$ROOT/tools/build-config-ios.json" "$RESOLVED" "$ROOT" <<'PY'
 import json, os, sys
-src, dst = sys.argv[1:]
+src, dst, root = sys.argv[1:]
 with open(src) as f:
     cfg = json.load(f)
+splash = cfg.get('splashScreen', {}).get('logo', {})
+if splash.get('image') and not os.path.isabs(splash['image']):
+    splash['image'] = os.path.join(root, splash['image'])
 os.makedirs(os.path.dirname(dst), exist_ok=True)
 with open(dst, 'w') as f:
     json.dump(cfg, f, indent=2, ensure_ascii=False)
