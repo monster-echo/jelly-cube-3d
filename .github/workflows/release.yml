@@ -124,6 +124,22 @@ jobs:
           test -x "$COCOS"
           echo "COCOS=$COCOS" >> "$GITHUB_ENV"
 
+      - name: Cache Android ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-android-${{ runner.os }}-${{ hashFiles('native/android/**', 'tools/build_android.sh') }}
+          restore-keys: |
+            ccache-android-${{ runner.os }}-
+
+      - name: Set up ccache
+        run: |
+          command -v ccache >/dev/null 2>&1 || HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache
+          ccache --set-config=max_size=1.5G
+          ccache --set-config=compression=true
+          ccache --set-config=base_dir="$GITHUB_WORKSPACE"
+          ccache -z
+
       - name: Set up Android signing
         if: ${{ !inputs.dry_run }}
         env:
@@ -259,6 +275,22 @@ jobs:
           key: cocoapods-${{ runner.os }}-${{ hashFiles('tools/build_ios.sh') }}
           restore-keys: |
             cocoapods-${{ runner.os }}-
+
+      - name: Cache iOS ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-ios-${{ runner.os }}-${{ hashFiles('native/ios/**', 'tools/build_ios.sh') }}
+          restore-keys: |
+            ccache-ios-${{ runner.os }}-
+
+      - name: Set up ccache
+        run: |
+          command -v ccache >/dev/null 2>&1 || HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache
+          ccache --set-config=max_size=1.5G
+          ccache --set-config=compression=true
+          ccache --set-config=base_dir="$GITHUB_WORKSPACE"
+          ccache -z
 
       - name: Import Apple distribution signing
         if: ${{ !inputs.dry_run }}

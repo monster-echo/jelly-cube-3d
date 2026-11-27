@@ -210,6 +210,12 @@ if "ANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON" not in src:
         '"-DANDROID_ARM_NEON=TRUE"',
         '"-DANDROID_ARM_NEON=TRUE", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"',
     )
+import shutil
+if shutil.which("ccache") and "CMAKE_CXX_COMPILER_LAUNCHER=ccache" not in src:
+    src = src.replace(
+        '"-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"',
+        '"-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON", "-DCMAKE_C_COMPILER_LAUNCHER=ccache", "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"',
+    )
 if "useLegacyPackaging = false" not in src and "    sourceSets.main {" in src:
     src = src.replace(
         "    sourceSets.main {",

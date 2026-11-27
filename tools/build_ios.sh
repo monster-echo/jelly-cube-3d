@@ -341,24 +341,46 @@ if [[ -z "$WORKSPACE" ]]; then
 	exit 1
 fi
 
+# Use ccache compiler wrappers when ccache is installed (e.g. CI).
+XCODE_CC_ARGS=()
+if command -v ccache >/dev/null 2>&1; then
+	mkdir -p "$ROOT/.tmp/ccache-bin"
+	cat > "$ROOT/.tmp/ccache-bin/clang" <<'SH'
+#!/usr/bin/env bash
+export CCACHE_SLOPPINESS="${CCACHE_SLOPPINESS:-pch_defines,time_macros,clang_index_store}"
+exec ccache /usr/bin/clang "$@"
+SH
+	cat > "$ROOT/.tmp/ccache-bin/clang++" <<'SH'
+#!/usr/bin/env bash
+export CCACHE_SLOPPINESS="${CCACHE_SLOPPINESS:-pch_defines,time_macros,clang_index_store}"
+exec ccache /usr/bin/clang++ "$@"
+SH
+	chmod +x "$ROOT/.tmp/ccache-bin/clang" "$ROOT/.tmp/ccache-bin/clang++"
+	XCODE_CC_ARGS=(CC="$ROOT/.tmp/ccache-bin/clang" CXX="$ROOT/.tmp/ccache-bin/clang++")
+	echo "ccache wrappers enabled for xcodebuild"
+fi
+
 if [[ "$STAGE" == "sim" ]]; then
 	echo "== unsigned simulator compile (CI dry run)"
 	BUILD_ARGS=(
+		-quiet
 		-workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release
 		-sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
 		IPHONEOS_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET"
 		OTHER_CPLUSPLUSFLAGS="$IOS_EXTRA_CXXFLAGS"
 		OTHER_LDFLAGS="$IOS_EXTRA_LDFLAGS"
+		"${XCODE_CC_ARGS[@]}"
 		CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 		PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID"
 	)
 	if ! xcodebuild "${BUILD_ARGS[@]}" build; then
 		echo "simulator compile failed; retrying as unsigned device build"
-		xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
+		xcodebuild -quiet -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
 			-sdk iphoneos -destination 'generic/platform=iOS' \
 			IPHONEOS_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET" \
 			OTHER_CPLUSPLUSFLAGS="$IOS_EXTRA_CXXFLAGS" \
 			OTHER_LDFLAGS="$IOS_EXTRA_LDFLAGS" \
+			"${XCODE_CC_ARGS[@]}" \
 			CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
 			PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" build
 	fi
@@ -381,6 +403,7 @@ SIGNING_ARGS=(
 	IPHONEOS_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET"
 	OTHER_CPLUSPLUSFLAGS="$IOS_EXTRA_CXXFLAGS"
 	OTHER_LDFLAGS="$IOS_EXTRA_LDFLAGS"
+	"${XCODE_CC_ARGS[@]}"
 	GCC_GENERATE_DEBUGGING_SYMBOLS=YES
 	-allowProvisioningUpdates
 	-authenticationKeyPath "$ASC_KEY_PATH"
@@ -390,7 +413,7 @@ SIGNING_ARGS=(
 	CODE_SIGN_IDENTITY="Apple Development"
 )
 rm -rf "$ARCHIVE"
-xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" \
+xcodebuild -quiet -workspace "$WORKSPACE" -scheme "$SCHEME" \
 	-configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
 	-archivePath "$ARCHIVE" \
 	"${SIGNING_ARGS[@]}" \

@@ -8,7 +8,7 @@
   "description": "Jelly Cube 3D — GPU-accelerated soft-body 3D twisty puzzle in Cocos Creator 3.8.6",
   "scripts": {
     "check:cocos": "tsc -p tsconfig.cocos.json",
-    "test:core": "esbuild tests/core.test.ts --bundle --platform=node --format=esm --outfile=.tmp/core.test.mjs --log-level=warning && node .tmp/core.test.mjs",
+    "test:core": "esbuild tests/core.test.ts --bundle --platform=node --format=esm --alias:cc=./tests/cc-shim.ts --outfile=.tmp/core.test.mjs --log-level=warning && node .tmp/core.test.mjs",
     "test": "npm run check:cocos && npm run test:core"
   },
   "devDependencies": {
