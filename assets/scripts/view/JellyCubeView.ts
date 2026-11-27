@@ -453,8 +453,8 @@ export class JellyCubeView extends Component {
     triggerSolveBounce(): void {
         this._lift = 0.55;
         this._liftVel = 2.6;
-        this._squashY = 1.16;
-        this._squashVel = -1.8;
+        this._squashY = 1.24;
+        this._squashVel = -3.0;
     }
 
     syncImmediate(): void {
@@ -487,9 +487,9 @@ export class JellyCubeView extends Component {
               this._hintAnim.sign
             : 0;
 
-        // 1. Update slice turn springs (stiff, bouncy jelly settle)
-        const stiffness = 240;
-        const damping = 16;
+        // 1. Update slice turn springs (snappy, bouncy jelly settle)
+        const stiffness = 280;
+        const damping = 13.5;
         for (let i = this._turnSprings.length - 1; i >= 0; i--) {
             const s = this._turnSprings[i];
             const accel = -stiffness * s.angleDeg - damping * s.velocityDeg;
@@ -497,6 +497,8 @@ export class JellyCubeView extends Component {
             s.angleDeg += s.velocityDeg * step;
             if (Math.abs(s.angleDeg) < 0.15 && Math.abs(s.velocityDeg) < 1.0) {
                 this._turnSprings.splice(i, 1);
+                // Subtle squash impulse when a slice snaps into place
+                this._squashVel -= 0.9;
             }
         }
 
@@ -532,7 +534,7 @@ export class JellyCubeView extends Component {
         if (this.jellyEffect) {
             const wobble =
                 this._turnSprings.length > 0
-                    ? Math.max(-0.4, Math.min(0.4, this._turnSprings[0].velocityDeg * 0.0012))
+                    ? Math.max(-0.55, Math.min(0.55, this._turnSprings[0].velocityDeg * 0.0018))
                     : 0;
             const squashVec = new Vec4(squashXZ, this._squashY, squashXZ, wobble);
             const pokeVec = new Vec4(
