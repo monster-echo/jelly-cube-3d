@@ -1,0 +1,4 @@
+Version 2.0.2 updates:
+• Updated default jelly cube theme with brighter candy colors and soft lavender-pink studio atmosphere
+• Unified HUD cards and buttons with the new pastel jelly visual style
+• Improved iOS build pipeline and launch experience

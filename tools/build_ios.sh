@@ -43,7 +43,7 @@ PRIVACY="$ROOT/tools/ios/PrivacyInfo.xcprivacy"
 IOS_DEPLOYMENT_TARGET="${IOS_DEPLOYMENT_TARGET:-15.0}"
 # New clang (Xcode 26+) hard-errors on patterns Cocos 3.8.6's vendored
 # headers still use. Downgrade those diagnostics; real breakage still fails.
-IOS_EXTRA_CXXFLAGS='$(inherited) -Wno-error=invalid-specialization -Wno-error=enum-constexpr-conversion -Wno-error=deprecated-declarations -Wno-error=deprecated-non-prototype'
+IOS_EXTRA_CXXFLAGS='$(inherited) -Wno-error=invalid-specialization -Wno-error=enum-constexpr-conversion -Wno-error=deprecated-declarations -Wno-error=deprecated-non-prototype -Wno-deprecated-builtins -Wno-nontrivial-memcall'
 # GoogleMobileAds is Swift-built but statically linked into an ObjC-only app:
 # the linker needs the Swift static compatibility libs explicitly on the path.
 SWIFT_COMPAT_DIR="$(dirname "$(find "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift" \
@@ -480,14 +480,7 @@ mkdir -p "$ICONSET/AppIcon.appiconset" "$ROOT/.tmp/appicon-out"
 # expansion default is a bash parsing trap. Assign the default plainly first.
 DEFAULT_ICON="$ROOT/settings/app_icon_1024.png"
 ICON_SRC="${ICON_SRC:-$DEFAULT_ICON}"
-python3 - "$ICON_SRC" "$ICONSET/AppIcon.appiconset/icon_1024.png" <<'PY'
-import sys
-from PIL import Image
-src = Image.open(sys.argv[1]).convert('RGBA')
-bg = Image.new('RGB', src.size, (255, 255, 255))
-bg.paste(src, mask=src.split()[3] if src.mode == 'RGBA' else None)
-bg.resize((1024, 1024), Image.LANCZOS).save(sys.argv[2], 'PNG')
-PY
+sips -s format png -z 1024 1024 "$ICON_SRC" --out "$ICONSET/AppIcon.appiconset/icon_1024.png" >/dev/null
 cat > "$ICONSET/AppIcon.appiconset/Contents.json" <<'JSON'
 {
   "images" : [

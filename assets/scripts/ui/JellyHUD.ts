@@ -47,21 +47,21 @@ const PRIVACY_URL = 'https://auth.zhongbei.tech/legal/privacy?app=jellycube3d&lo
 
 // web/style.css tokens
 const C = {
-    bg: '#fff6f9',
+    bg: '#f7eaff',
     ink: '#34223e',
-    ink2: '#6c4d80',
+    ink2: '#644478',
     dark: '#3e2a4e',
     purple: '#7448f5',
     purple2: '#9b6bff',
-    card: '#f2eaf8',
-    cardSoft: '#f7f3fb',
+    card: '#f0e2fa',
+    cardSoft: '#f8f0fd',
     gold: '#ffe8a8',
     goldInk: '#824a0a',
-    pink: '#ff7298',
-    orange: '#ffa830',
+    pink: '#ff4f7e',
+    orange: '#ff9e22',
     white: '#ffffff',
-    line: '#efe7f6',
-    muted: '#846d91',
+    line: '#e6d3f5',
+    muted: '#7e6590',
     dot: '#8a7599',
 };
 

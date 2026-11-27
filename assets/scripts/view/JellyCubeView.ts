@@ -344,7 +344,7 @@ export class JellyCubeView extends Component {
         }
 
         if (this._coreMat && this.jellyEffect) {
-            this._coreMat.setProperty('mainColor', new Vec4(0.98, 0.95, 0.99, m.alpha * 0.42));
+            this._coreMat.setProperty('mainColor', new Vec4(0.99, 0.95, 1.0, m.alpha * 0.44));
             this._coreMat.setProperty(
                 'jellyParams',
                 new Vec4(m.wrapLight, m.rimStrength, m.rimPower, m.shininess),
@@ -352,8 +352,17 @@ export class JellyCubeView extends Component {
             this._coreMat.setProperty('lightDir', new Vec4(0.45, 0.80, 0.55, matMode));
         }
 
+        const [br, bg, bb] = hexToRgbNormalized(skin.backdropTop);
+        if (this._plateMat) {
+            const [pr, pg, pb] = hexToRgbNormalized(skin.backdropBottom);
+            const isDark = pr * 0.3 + pg * 0.59 + pb * 0.11 < 0.35;
+            const plateColor = isDark
+                ? new Vec4(pr * 1.25, pg * 1.25, pb * 1.25, 0.9)
+                : new Vec4(pr * 0.96, pg * 0.93, pb * 1.0, 0.88);
+            this._plateMat.setProperty('mainColor', plateColor);
+        }
+
         if (this.camera) {
-            const [br, bg, bb] = hexToRgbNormalized(skin.backdropTop);
             this.camera.clearColor = new Color(br * 255, bg * 255, bb * 255, 255);
         }
     }

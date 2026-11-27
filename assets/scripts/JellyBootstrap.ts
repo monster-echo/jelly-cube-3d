@@ -46,7 +46,7 @@ export class JellyBootstrap extends Component {
             cam.near = 0.5;
             cam.far = 100;
             cam.clearFlags = Camera.ClearFlag.SOLID_COLOR;
-            cam.clearColor = new Color(255, 246, 249, 255);
+            cam.clearColor = new Color(247, 234, 255, 255);
             rig = camNode.addComponent(JellyCameraRig);
             rig.camera = cam;
         } else {
@@ -60,7 +60,7 @@ export class JellyBootstrap extends Component {
             lightNode.parent = scene;
             lightNode.setRotationFromEuler(-48, 32, 0);
             const light = lightNode.addComponent(DirectionalLight);
-            light.illuminance = 65000;
+            light.illuminance = 70000;
         }
 
         // 3. 3D Jelly Cube Root — wire while inactive: addComponent runs
