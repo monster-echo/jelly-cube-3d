@@ -187,6 +187,26 @@ open(p, 'w').write(src.replace(anchor, add, 1))
 PY
 	echo "CMakeLists: SceneDelegate appended"
 fi
+# AdMobBridge is ARC-style code but the CMake project compiles without ARC,
+# so the rewarded ad ivar was an unretained pointer -> stale object crash on
+# present. Compile just this file with ARC.
+if [[ -f "$CML" ]] && ! grep -q "AdMobBridge.mm PROPERTIES" "$CML"; then
+	python3 - "$CML" <<'PY'
+import sys
+p = sys.argv[1]
+src = open(p).read()
+anchor = "add_executable(${EXECUTABLE_NAME} ${CC_ALL_SOURCES})"
+add = (
+    'set_source_files_properties(${CC_PROJECT_DIR}/AdMobBridge.mm '
+    'PROPERTIES COMPILE_FLAGS "-fobjc-arc")\n\n' + anchor
+)
+if anchor not in src:
+    raise SystemExit("add_executable not found in " + p)
+open(p, "w").write(src.replace(anchor, add, 1))
+PY
+	echo "CMakeLists: AdMobBridge compiled with ARC"
+fi
+
 if [[ -f "$CML" ]] && ! grep -q "AppTrackingTransparency" "$CML"; then
 	python3 - "$CML" <<'PY'
 import sys
@@ -371,7 +391,7 @@ if [[ "$STAGE" == "sim" ]]; then
 		IPHONEOS_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET"
 		OTHER_CPLUSPLUSFLAGS="$IOS_EXTRA_CXXFLAGS"
 		OTHER_LDFLAGS="$IOS_EXTRA_LDFLAGS"
-		"${XCODE_CC_ARGS[@]}"
+		${XCODE_CC_ARGS[@]+"${XCODE_CC_ARGS[@]}"}
 		CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 		PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID"
 	)
@@ -382,7 +402,7 @@ if [[ "$STAGE" == "sim" ]]; then
 			IPHONEOS_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET" \
 			OTHER_CPLUSPLUSFLAGS="$IOS_EXTRA_CXXFLAGS" \
 			OTHER_LDFLAGS="$IOS_EXTRA_LDFLAGS" \
-			"${XCODE_CC_ARGS[@]}" \
+			${XCODE_CC_ARGS[@]+"${XCODE_CC_ARGS[@]}"} \
 			CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
 			PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" build
 	fi
@@ -405,7 +425,7 @@ SIGNING_ARGS=(
 	IPHONEOS_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET"
 	OTHER_CPLUSPLUSFLAGS="$IOS_EXTRA_CXXFLAGS"
 	OTHER_LDFLAGS="$IOS_EXTRA_LDFLAGS"
-	"${XCODE_CC_ARGS[@]}"
+	${XCODE_CC_ARGS[@]+"${XCODE_CC_ARGS[@]}"}
 	GCC_GENERATE_DEBUGGING_SYMBOLS=YES
 	-allowProvisioningUpdates
 	-authenticationKeyPath "$ASC_KEY_PATH"

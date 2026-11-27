@@ -16,6 +16,7 @@ import {
     Vec3,
 } from 'cc';
 import { JellyAudio } from './platform/JellyAudio';
+import { PlatformBridge } from './platform/PlatformBridge';
 import { JellyGameController } from './ui/JellyGameController';
 import { JellyHUD } from './ui/JellyHUD';
 import { JellyCameraRig } from './view/JellyCameraRig';
@@ -112,6 +113,18 @@ export class JellyBootstrap extends Component {
             ) as string;
             if (screen) {
                 this.scheduleOnce(() => this._hud?.debugOpen(screen), 0.5);
+            }
+            const autoAd = native.reflection.callStaticMethod(
+                'AdMobBridge',
+                'launchValue:',
+                'jellyAutoAd',
+            ) as string;
+            if (autoAd === '1') {
+                for (const delay of [4, 10]) {
+                    this.scheduleOnce(() => {
+                        void PlatformBridge.showRewardedAd('hint');
+                    }, delay);
+                }
             }
         } catch {
             // Bridge unavailable (preview / older build)
