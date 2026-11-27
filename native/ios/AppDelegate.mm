@@ -67,8 +67,13 @@
     self.window   = [[UIWindow alloc] initWithFrame:bounds];
 
     // Should create view controller first, cc::Application will use it.
+    UIColor *launchBg = [UIColor colorWithRed:0.9608 green:0.9176 blue:0.9882 alpha:1.0];
+    self.window.backgroundColor             = launchBg;
     _viewController                           = [[ViewController alloc] init];
     _viewController.view                      = [[View alloc] initWithFrame:bounds];
+    _viewController.view.backgroundColor      = launchBg;
+    _viewController.view.layer.opaque         = NO;
+    _viewController.view.layer.backgroundColor = launchBg.CGColor;
     _viewController.view.contentScaleFactor   = UIScreen.mainScreen.scale;
     _viewController.view.multipleTouchEnabled = true;
     [self.window setRootViewController:_viewController];
@@ -85,8 +90,13 @@
     self.window.frame = bounds;
 
     // Should create view controller first, cc::Application will use it.
+    UIColor *launchBg = [UIColor colorWithRed:0.9608 green:0.9176 blue:0.9882 alpha:1.0];
+    self.window.backgroundColor             = launchBg;
     _viewController                           = [[ViewController alloc] init];
     _viewController.view                      = [[View alloc] initWithFrame:bounds];
+    _viewController.view.backgroundColor      = launchBg;
+    _viewController.view.layer.opaque         = NO;
+    _viewController.view.layer.backgroundColor = launchBg.CGColor;
     _viewController.view.contentScaleFactor   = UIScreen.mainScreen.scale;
     _viewController.view.multipleTouchEnabled = true;
     [self.window setRootViewController:_viewController];
