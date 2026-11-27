@@ -67,13 +67,30 @@ jobs:
       - name: Set up Android SDK tools
         uses: android-actions/setup-android@v4
 
+      - name: Cache Android SDK/NDK & Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Android/sdk/ndk/${{ env.ANDROID_NDK_VERSION }}
+            ~/Library/Android/sdk/platforms/android-${{ env.ANDROID_COMPILE_SDK_VERSION }}
+            ~/Library/Android/sdk/build-tools/36.0.0
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: android-sdk-${{ env.ANDROID_COMPILE_SDK_VERSION }}-ndk-${{ env.ANDROID_NDK_VERSION }}-gradle-${{ hashFiles('native/engine/android/**/*.gradle*', 'tools/build_android.sh') }}
+          restore-keys: |
+            android-sdk-${{ env.ANDROID_COMPILE_SDK_VERSION }}-ndk-${{ env.ANDROID_NDK_VERSION }}-
+
       - name: Install Android SDK components
         run: |
           set -euo pipefail
           SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}"
           echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
-          sdkmanager "platforms;android-${ANDROID_COMPILE_SDK_VERSION}" "build-tools;36.0.0" "ndk;${ANDROID_NDK_VERSION}"
+          if [[ ! -d "$SDK_ROOT/ndk/${ANDROID_NDK_VERSION}" || ! -d "$SDK_ROOT/platforms/android-${ANDROID_COMPILE_SDK_VERSION}" ]]; then
+            sdkmanager "platforms;android-${ANDROID_COMPILE_SDK_VERSION}" "build-tools;36.0.0" "ndk;${ANDROID_NDK_VERSION}"
+          else
+            echo "Android SDK/NDK restored from cache"
+          fi
 
       - name: Restore Cocos Creator
         id: cocos-cache
@@ -232,6 +249,16 @@ jobs:
           COCOS="$HOME/cocos-creator/CocosCreator.app/Contents/MacOS/CocosCreator"
           test -x "$COCOS"
           echo "COCOS=$COCOS" >> "$GITHUB_ENV"
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cocoapods
+            ~/Library/Caches/CocoaPods
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('tools/build_ios.sh') }}
+          restore-keys: |
+            cocoapods-${{ runner.os }}-
 
       - name: Import Apple distribution signing
         if: ${{ !inputs.dry_run }}

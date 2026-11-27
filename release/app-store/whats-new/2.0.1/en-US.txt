@@ -1,0 +1,4 @@
+Version 2.0.1 updates:
+• Redesigned app icon and launch screen with translucent 3D jelly cube branding
+• Updated Cocos splash loading screen to match the new visual identity
+• Improved native launch stability and build pipeline

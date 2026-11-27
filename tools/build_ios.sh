@@ -44,6 +44,25 @@ IOS_DEPLOYMENT_TARGET="${IOS_DEPLOYMENT_TARGET:-15.0}"
 # New clang (Xcode 26+) hard-errors on patterns Cocos 3.8.6's vendored
 # headers still use. Downgrade those diagnostics; real breakage still fails.
 IOS_EXTRA_CXXFLAGS='$(inherited) -Wno-error=invalid-specialization -Wno-error=enum-constexpr-conversion -Wno-error=deprecated-declarations -Wno-error=deprecated-non-prototype'
+# GoogleMobileAds is Swift-built but statically linked into an ObjC-only app:
+# the linker needs the Swift static compatibility libs explicitly on the path.
+SWIFT_COMPAT_DIR="$(dirname "$(find "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift" \
+	-path '*iphoneos/libswiftCompatibility51.a' -print -quit 2>/dev/null)" 2>/dev/null || true)"
+if [[ -z "$SWIFT_COMPAT_DIR" || ! -d "$SWIFT_COMPAT_DIR" ]]; then
+	SWIFT_COMPAT_DIR="$(dirname "$(find "$(xcode-select -p)" \
+		-name 'libswiftCompatibility51.a' -print -quit 2>/dev/null)" 2>/dev/null || true)"
+fi
+if [[ -z "$SWIFT_COMPAT_DIR" || ! -f "$SWIFT_COMPAT_DIR/libswiftCompatibility51.a" ]]; then
+	SWIFT_COMPAT_DIR="$(dirname "$(find /var/run/com.apple.security.cryptexd \
+		-name 'libswiftCompatibility51.a' -print -quit 2>/dev/null)" 2>/dev/null || true)"
+fi
+if [[ -n "$SWIFT_COMPAT_DIR" && -f "$SWIFT_COMPAT_DIR/libswiftCompatibility51.a" ]]; then
+	echo "swift compat libs: $SWIFT_COMPAT_DIR"
+	IOS_EXTRA_LDFLAGS="\$(inherited) -L$SWIFT_COMPAT_DIR -lswiftCompatibility51 -lswiftCompatibility56 -lswiftCompatibilityConcurrency"
+else
+	echo "::warning::Swift static compatibility libs not found; relying on toolchain autolink"
+	IOS_EXTRA_LDFLAGS='$(inherited)'
+fi
 
 eval "$(python3 "$ROOT/tools/set_versions.py" get)"
 VERSION="${VERSION:-$version}"
@@ -329,6 +348,7 @@ if [[ "$STAGE" == "sim" ]]; then
 		-sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
 		IPHONEOS_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET"
 		OTHER_CPLUSPLUSFLAGS="$IOS_EXTRA_CXXFLAGS"
+		OTHER_LDFLAGS="$IOS_EXTRA_LDFLAGS"
 		CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 		PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID"
 	)
@@ -338,6 +358,7 @@ if [[ "$STAGE" == "sim" ]]; then
 			-sdk iphoneos -destination 'generic/platform=iOS' \
 			IPHONEOS_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET" \
 			OTHER_CPLUSPLUSFLAGS="$IOS_EXTRA_CXXFLAGS" \
+			OTHER_LDFLAGS="$IOS_EXTRA_LDFLAGS" \
 			CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
 			PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" build
 	fi
@@ -359,6 +380,7 @@ SIGNING_ARGS=(
 	CURRENT_PROJECT_VERSION="$BUILD"
 	IPHONEOS_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET"
 	OTHER_CPLUSPLUSFLAGS="$IOS_EXTRA_CXXFLAGS"
+	OTHER_LDFLAGS="$IOS_EXTRA_LDFLAGS"
 	GCC_GENERATE_DEBUGGING_SYMBOLS=YES
 	-allowProvisioningUpdates
 	-authenticationKeyPath "$ASC_KEY_PATH"
