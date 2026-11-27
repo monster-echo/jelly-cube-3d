@@ -294,7 +294,9 @@ cp "$ROOT/native/ios/LaunchScreenBackgroundPortrait.png" "$TEMPLATE_IOS/LaunchSc
 # UISupportedInterfaceOrientations from the project settings, which would
 # otherwise leave dev builds landscape (Xcode "Run" bypasses the archive step).
 if [[ -f "$TEMPLATE_IOS/Info.plist" ]]; then
-	echo "== patch template Info.plist (scene manifest, AdMob, portrait)"
+	echo "== patch template Info.plist (display name, scene manifest, AdMob, portrait)"
+	plist_set "$TEMPLATE_IOS/Info.plist" CFBundleDisplayName "$DISPLAY_NAME"
+	plist_set "$TEMPLATE_IOS/Info.plist" CFBundleName "$DISPLAY_NAME"
 	plist_set "$TEMPLATE_IOS/Info.plist" GADApplicationIdentifier "$ADMOB_APP_ID"
 	plist_set "$TEMPLATE_IOS/Info.plist" NSUserTrackingUsageDescription "This identifier will be used to deliver personalized ads to you."
 	apply_scene_manifest "$TEMPLATE_IOS/Info.plist"
@@ -432,6 +434,7 @@ pb_set() {
 }
 pb_set ITSAppUsesNonExemptEncryption false
 pb_set CFBundleDisplayName "$DISPLAY_NAME"
+pb_set CFBundleName "$DISPLAY_NAME"
 pb_set CFBundleShortVersionString "$VERSION"
 pb_set CFBundleVersion "$BUILD"
 pb_set GADApplicationIdentifier "$ADMOB_APP_ID"

@@ -27,6 +27,7 @@ MIN_SDK="${MIN_SDK:-24}"
 COMPILE_SDK="${COMPILE_SDK:-36}"
 APP_ABI="${APP_ABI:-arm64-v8a}"
 APP_NAME="${APP_NAME:-jellycube3d}"
+DISPLAY_NAME="${DISPLAY_NAME:-Jelly Cube 3D}"
 PACKAGE_ID="${PACKAGE_ID:-tech.zhongbei.jellycube3d}"
 ADMOB_APP_ID="${ADMOB_APP_ID:-ca-app-pub-2271052258925299~2443463295}"
 KEY_PASS="${KEY_PASS:-${KEYSTORE_PASS:-}}"
@@ -189,6 +190,23 @@ if ! grep -q "com.google.android.gms.ads.APPLICATION_ID" "$MAIN_MANIFEST"; then
 	awk -v line="$META_LINE" 'BEGIN{done=0} /<application/{print; if(!done){print line; done=1; next} next} {print}' \
 		"$MAIN_MANIFEST" > "$MAIN_MANIFEST.tmp" && mv "$MAIN_MANIFEST.tmp" "$MAIN_MANIFEST"
 	echo "manifest: AdMob APPLICATION_ID injected"
+fi
+
+# 2b. Set user-facing app_name in res/values/strings.xml (Cocos defaults to build name "jellycube3d").
+STRINGS_XML="$PROJ_DIR/res/values/strings.xml"
+if [[ -f "$STRINGS_XML" ]]; then
+	python3 - "$STRINGS_XML" "$DISPLAY_NAME" <<'PY'
+import re, sys
+p, name = sys.argv[1], sys.argv[2]
+src = open(p).read()
+dst = re.sub(
+    r'(<string\s+name="app_name"[^>]*>)[^<]*(</string>)',
+    rf'\g<1>{name}\g<2>',
+    src,
+)
+open(p, "w").write(dst)
+PY
+	echo "strings.xml: app_name set to '$DISPLAY_NAME'"
 fi
 
 # 3. Patch app/build.gradle and CMakeLists.txt (AdMob, 16KB page size, R8, AndroidX).
