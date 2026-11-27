@@ -7,6 +7,8 @@
 #import <AppTrackingTransparency/AppTrackingTransparency.h>
 #import <GoogleMobileAds/GoogleMobileAds.h>
 #include "cocos/bindings/jswrapper/SeApi.h"
+#include "cocos/application/ApplicationManager.h"
+#include <string>
 
 static NSString *const kIosRewardedUnitId = @"ca-app-pub-2271052258925299/2302936450";
 static NSString *const kIosInterstitialUnitId = @"ca-app-pub-2271052258925299/7327585319";
@@ -48,17 +50,34 @@ static const NSTimeInterval kInterstitialCooldownSec = 60.0;
 }
 
 + (UIViewController *)rootVC {
-    return UIApplication.sharedApplication.keyWindow.rootViewController;
+    UIWindow *keyWindow = nil;
+    for (UIWindowScene *scene in UIApplication.sharedApplication.connectedScenes) {
+        if ([scene isKindOfClass:[UIWindowScene class]] &&
+            scene.activationState == UISceneActivationStateForegroundActive) {
+            for (UIWindow *w in scene.windows) {
+                if (w.isKeyWindow) { keyWindow = w; break; }
+            }
+            if (!keyWindow) keyWindow = scene.windows.firstObject;
+            if (keyWindow) break;
+        }
+    }
+    UIViewController *vc = keyWindow.rootViewController;
+    while (vc.presentedViewController) {
+        vc = vc.presentedViewController;
+    }
+    return vc;
 }
 
 + (void)evalJsCallback:(NSString *)cbName ok:(BOOL)ok {
     if (!cbName || cbName.length == 0) return;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        se::ScriptEngine::getInstance()->evalString(
-            [NSString stringWithFormat:@"globalThis['%@'] && globalThis['%@'](%@);",
-             cbName, cbName, ok ? @"true" : @"false"].UTF8String
-        );
-    });
+    NSString *js = [NSString stringWithFormat:@"globalThis['%@'] && globalThis['%@'](%@);",
+                    cbName, cbName, ok ? @"true" : @"false"];
+    std::string script([js UTF8String]);
+    if (CC_CURRENT_ENGINE() && CC_CURRENT_ENGINE()->getScheduler()) {
+        CC_CURRENT_ENGINE()->getScheduler()->performFunctionInCocosThread([script]() {
+            se::ScriptEngine::getInstance()->evalString(script.c_str());
+        });
+    }
 }
 
 + (void)preloadAds {
@@ -108,12 +127,17 @@ static const NSTimeInterval kInterstitialCooldownSec = 60.0;
             [self evalJsCallback:cbName ok:NO];
             return;
         }
+        UIViewController *vc = [self rootVC];
+        if (!vc) {
+            [self evalJsCallback:cbName ok:NO];
+            return;
+        }
         GADRewardedAd *ad = s->_rewardedAd;
         s->_rewardedAd = nil;
         s->_pendingRewardCb = [cbName copy];
         s->_rewardEarned = NO;
 
-        [ad presentFromRootViewController:[self rootVC] userDidEarnRewardHandler:^{
+        [ad presentFromRootViewController:vc userDidEarnRewardHandler:^{
             s->_rewardEarned = YES;
         }];
     });
