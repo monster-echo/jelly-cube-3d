@@ -456,7 +456,7 @@ ICONSET="$ROOT/.tmp/appicon"
 mkdir -p "$ICONSET/AppIcon.appiconset" "$ROOT/.tmp/appicon-out"
 # NB: no "${X:-...Rubik's...}" here — an apostrophe inside a parameter
 # expansion default is a bash parsing trap. Assign the default plainly first.
-DEFAULT_ICON="/Users/echo/workspace/Rubik's Jelly/branding/app_icon_1024.png"
+DEFAULT_ICON="$ROOT/settings/app_icon_1024.png"
 ICON_SRC="${ICON_SRC:-$DEFAULT_ICON}"
 python3 - "$ICON_SRC" "$ICONSET/AppIcon.appiconset/icon_1024.png" <<'PY'
 import sys
