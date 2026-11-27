@@ -102,6 +102,23 @@
     [self.window setRootViewController:_viewController];
 
     [self.window makeKeyAndVisible];
+
+    // Mask the ~0.5-1s Metal/JS initialization gap so there is never a black frame
+    // between LaunchScreen dismissal and Cocos's first rendered frame.
+    UIImageView *splashOverlay = [[UIImageView alloc] initWithFrame:bounds];
+    splashOverlay.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    splashOverlay.contentMode = UIViewContentModeScaleAspectFill;
+    splashOverlay.backgroundColor = launchBg;
+    splashOverlay.image = [UIImage imageNamed:@"LaunchScreenBackground.png"];
+    [_viewController.view addSubview:splashOverlay];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.9 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [UIView animateWithDuration:0.25 animations:^{
+            splashOverlay.alpha = 0.0;
+        } completion:^(BOOL finished) {
+            [splashOverlay removeFromSuperview];
+        }];
+    });
+
     [appDelegateBridge application:UIApplication.sharedApplication didFinishLaunchingWithOptions:nil];
 }
 
