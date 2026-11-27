@@ -553,7 +553,9 @@ export class JellyGameController extends Component {
             const totalDx = loc.x - this._drag.startScreen.x;
             const totalDy = loc.y - this._drag.startScreen.y;
             const proj = totalDx * this._drag.screenAxisDir.x + totalDy * this._drag.screenAxisDir.y;
-            this._drag.angleDeg = Math.max(-135, Math.min(135, proj * 0.48));
+            // Follow the finger without a hard cap; the committed turn is
+            // whatever quarter the gesture rounded to.
+            this._drag.angleDeg = proj * 0.48;
             this.cubeView?.setInteractiveTurn(
                 this._drag.lockedAxis,
                 this._drag.lockedCoord,
