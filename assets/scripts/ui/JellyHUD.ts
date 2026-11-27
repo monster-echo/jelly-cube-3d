@@ -101,6 +101,8 @@ export class JellyHUD extends Component {
     private _toastToken = 0;
     private _lastOnHome: boolean | null = null;
     private _bannerVisible = false;
+    private _rotateBtn: { node: Node; label: Label } | null = null;
+    private _rotateOn = false;
 
     private _homeCoins!: Label;
     private _homePlay!: Label;
@@ -541,6 +543,8 @@ export class JellyHUD extends Component {
         const levelX = barLeft + margin + levelW / 2;
         const pauseX = barRight - margin - pauseW / 2;
         const coinsX = pauseX - pauseW / 2 - barGap - coinsW / 2;
+        const rotateW = 40 * u;
+        const rotateX = coinsX - coinsW / 2 - barGap - rotateW / 2;
         const lvl = this._button(
             this._gameRoot,
             'LevelPill',
@@ -572,6 +576,22 @@ export class JellyHUD extends Component {
         );
         coins.node.setPosition(coinsX, topY, 0);
         this._coinsLabel = coins.label;
+
+        const rotate = this._button(
+            this._gameRoot,
+            'RotateBtn',
+            rotateW,
+            40 * u,
+            20 * u,
+            '#ffffff',
+            '⟳',
+            hex(C.ink),
+            18,
+            () => this._toggleRotate(),
+            { shadow: true },
+        );
+        rotate.node.setPosition(rotateX, topY, 0);
+        this._rotateBtn = rotate;
 
         this._button(
             this._gameRoot,
@@ -696,6 +716,11 @@ export class JellyHUD extends Component {
             const root = s.onHome ? this._homeRoot : this._gameRoot;
             this.scheduleOnce(() => this._redrawGraphics(root), 0);
         }
+        if (this._lastOnHome === true && !s.onHome && this._rotateOn) {
+            this._rotateOn = false;
+            if (this.controller) this.controller.rotateMode = false;
+            this._paintRotateButton();
+        }
         this._lastOnHome = s.onHome;
         this._homeCoins.string = `🍬 ${s.coins}`;
         this._homePlay.string = `▶ Play Level ${s.unlockedLevel}`;
@@ -728,6 +753,36 @@ export class JellyHUD extends Component {
     }
 
     // ------------------------------------------------------------------ modal
+    private _toggleRotate(): void {
+        this._rotateOn = !this._rotateOn;
+        if (this.controller) this.controller.rotateMode = this._rotateOn;
+        this._paintRotateButton();
+        this._flashToast(this._rotateOn ? 'Rotate mode — drag to look' : 'Play mode');
+    }
+
+    private _paintRotateButton(): void {
+        const btn = this._rotateBtn;
+        if (!btn) return;
+        const fill = btn.node.getChildByName('Fill');
+        const draw = fill
+            ? (fill as unknown as { __draw?: { color: string } }).__draw
+            : undefined;
+        if (draw) {
+            draw.color = this._rotateOn ? C.purple : '#ffffff';
+            this._redrawGraphics(btn.node);
+        }
+        btn.label.color = this._rotateOn ? hex(C.white) : hex(C.ink);
+    }
+
+    private _flashToast(text: string): void {
+        this._toastLabel.string = text;
+        this._toastNode.active = true;
+        const token = ++this._toastToken;
+        this.scheduleOnce(() => {
+            if (token === this._toastToken) this._toastNode.active = false;
+        }, 1.8);
+    }
+
     private _syncBanner(): void {
         // Banner only on the home screen and never under a modal.
         const onHome = this._state?.onHome ?? true;

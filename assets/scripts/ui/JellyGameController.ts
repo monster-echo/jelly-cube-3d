@@ -115,6 +115,8 @@ export class JellyGameController extends Component {
 
     /** Set by the HUD while a modal covers the cube. */
     uiBlocking = false;
+    /** Camera-drag mode: true while the rotate toggle is on. */
+    rotateMode = false;
 
     private _drag: ActiveDrag | null = null;
     private _orbiting = false;
@@ -496,7 +498,11 @@ export class JellyGameController extends Component {
         const loc = e.getLocation();
         this._lastTouch.set(loc.x, loc.y);
 
-        if (this.uiBlocking || this._onHome || this._autoSolving || this._replaying || this._paused) {
+        if (this.uiBlocking || this._autoSolving || this._replaying || this._paused) {
+            this._orbiting = true;
+            return;
+        }
+        if (this._onHome || this.rotateMode) {
             this._orbiting = true;
             return;
         }
@@ -515,7 +521,9 @@ export class JellyGameController extends Component {
             return;
         }
 
-        this._orbiting = true;
+        // Play mode: a drag off the cube is ignored so a near miss never
+        // spins the camera; the rotate toggle owns camera gestures instead.
+        this._orbiting = false;
     }
 
     private _onTouchMove(e: EventTouch): void {
