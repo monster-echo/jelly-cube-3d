@@ -26,7 +26,13 @@
   },
   "packages": {
     "ios": {
-      "packageName": "tech.zhongbei.jellycube3d"
+      "packageName": "tech.zhongbei.jellycube3d",
+      "orientation": {
+        "portrait": true,
+        "upsideDown": false,
+        "landscapeRight": false,
+        "landscapeLeft": false
+      }
     }
   }
 }
