@@ -209,6 +209,12 @@ PY
 	echo "strings.xml: app_name set to '$DISPLAY_NAME'"
 fi
 
+# 2c. Copy pre-generated Android launcher + Adaptive Icon (mipmap-anydpi-v26) into res/.
+if [[ -d "$ROOT/native/android/res" ]]; then
+	cp -R "$ROOT/native/android/res/"* "$NATIVE_DIR/res/"
+	echo "res/mipmap-* & adaptive-icon (mipmap-anydpi-v26) synced from native/android/res"
+fi
+
 # 3. Patch app/build.gradle and CMakeLists.txt (AdMob, 16KB page size, R8, AndroidX).
 APP_GRADLE="$NATIVE_DIR/app/build.gradle"
 if [[ ! -f "$APP_GRADLE" ]]; then

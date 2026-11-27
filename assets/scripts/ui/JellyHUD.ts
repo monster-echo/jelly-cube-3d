@@ -410,31 +410,50 @@ export class JellyHUD extends Component {
         coins.node.setPosition(right - 46 * u, H / 2 - insetTop - 40 * u, 0);
         this._homeCoins = coins.label;
 
-        // hero
+        // hero: outlined candy-white title + purple pill tagline
         const logo = this._label(
             this._homeRoot,
             'Jelly Cube 3D',
-            30,
-            hex(C.ink),
+            34,
+            hex(C.white),
             cardW,
-            46 * u,
+            50 * u,
             true,
             'center',
             true,
         );
-        logo.node.setPosition(0, H / 2 - insetTop - 88 * u, 0);
-        const tagline = this._label(
+        logo.enableOutline = true;
+        logo.outlineColor = hex('#5c2498');
+        logo.outlineWidth = Math.max(2, Math.round(3.5 * u));
+        logo.enableShadow = true;
+        logo.shadowColor = hex('#401570', 110);
+        logo.shadowOffset.set(0, -2.5 * u);
+        logo.shadowBlur = 3 * u;
+        logo.node.setPosition(0, H / 2 - insetTop - 86 * u, 0);
+
+        const tagPillW = Math.min(cardW * 0.84, 290 * u);
+        const tagPill = this._surface(
             this._homeRoot,
-            'Squishy Physics · Endgame Puzzles · Global Ranks',
-            13,
-            hex(C.ink2),
-            cardW,
-            24 * u,
+            'TaglinePill',
+            tagPillW,
+            28 * u,
+            14 * u,
+            '#8b4cf6',
+            '#b06dff',
+            true,
+        );
+        tagPill.setPosition(0, H / 2 - insetTop - 122 * u, 0);
+        this._label(
+            tagPill,
+            '✨ A jelly-sweet cube puzzle ✨',
+            12.5,
+            hex(C.white),
+            tagPillW - 14 * u,
+            28 * u,
             true,
             'center',
             true,
         );
-        tagline.node.setPosition(0, H / 2 - insetTop - 113 * u, 0);
 
         // actions card
         const cardH = 126 * u;
@@ -623,8 +642,8 @@ export class JellyHUD extends Component {
             'UndoBtn',
             w1,
             38 * u,
-            16 * u,
-            '#f3edf8',
+            19 * u,
+            '#f3ebfa',
             '↶ Undo',
             hex(C.dark),
             13,
@@ -635,24 +654,26 @@ export class JellyHUD extends Component {
             'HintBtn',
             w1,
             38 * u,
-            16 * u,
-            C.pink,
+            19 * u,
+            '#ff3e78',
             '💡 Hint',
             hex(C.white),
             13,
             () => this._open('hint'),
+            { shadow: true },
         ).node.setPosition(-(innerW / 2) + w1 + gap + w1 / 2, 0, 0);
         this._button(
             dock,
             'TutorialBtn',
             w3,
             38 * u,
-            16 * u,
-            C.orange,
+            19 * u,
+            '#ff9a18',
             '🎬 Tutorial',
             hex(C.white),
             13,
             () => this._open('tutorial'),
+            { shadow: true },
         ).node.setPosition(innerW / 2 - w3 / 2, 0, 0);
     }
 
