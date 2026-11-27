@@ -1,0 +1,3 @@
+Version 2.0.3 updates:
+• Updated default jelly cube theme and store visual polish
+• Improved build pipeline and overall stability

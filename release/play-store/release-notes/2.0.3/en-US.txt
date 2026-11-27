@@ -1,0 +1,4 @@
+Version 2.0.3 updates:
+• Added 16 KB memory page size alignment and R8 optimization for Android
+• Updated AndroidX dependencies and improved overall stability
+• Updated default jelly cube theme and store visual polish

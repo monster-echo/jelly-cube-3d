@@ -191,22 +191,88 @@ if ! grep -q "com.google.android.gms.ads.APPLICATION_ID" "$MAIN_MANIFEST"; then
 	echo "manifest: AdMob APPLICATION_ID injected"
 fi
 
-# 3. Add the play-services-ads dependency to app/build.gradle.
+# 3. Patch app/build.gradle and CMakeLists.txt (AdMob, 16KB page size, R8, AndroidX).
 APP_GRADLE="$NATIVE_DIR/app/build.gradle"
 if [[ ! -f "$APP_GRADLE" ]]; then
 	echo "app/build.gradle not found at $APP_GRADLE" >&2
 	exit 1
 fi
-if ! grep -q "play-services-ads" "$APP_GRADLE"; then
-	sed -i.bak "s|^dependencies {|dependencies {\n    implementation 'com.google.android.gms:play-services-ads:24.4.0'|" \
-		"$APP_GRADLE" && rm -f "$APP_GRADLE.bak"
-	echo "app/build.gradle: play-services-ads added"
-else
-	# an older line may persist in the merged template — force the pinned version
-	sed -i.bak "s|com.google.android.gms:play-services-ads:[0-9.]*|com.google.android.gms:play-services-ads:24.4.0|" \
-		"$APP_GRADLE" && rm -f "$APP_GRADLE.bak"
-	echo "app/build.gradle: play-services-ads pinned to 24.4.0"
-fi
+ANDROID_CMAKE="$NATIVE_DIR/CMakeLists.txt"
+python3 - "$APP_GRADLE" "$ANDROID_CMAKE" <<'PY'
+import re, sys
+
+gradle_path, cmake_path = sys.argv[1], sys.argv[2]
+src = open(gradle_path).read()
+
+# 3a. 16 KB page size: CMake flexible page size flag + uncompressed jniLibs packaging
+if "ANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON" not in src:
+    src = src.replace(
+        '"-DANDROID_ARM_NEON=TRUE"',
+        '"-DANDROID_ARM_NEON=TRUE", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"',
+    )
+if "useLegacyPackaging = false" not in src and "    sourceSets.main {" in src:
+    src = src.replace(
+        "    sourceSets.main {",
+        "    packaging {\n        jniLibs {\n            useLegacyPackaging = false\n        }\n    }\n\n    sourceSets.main {",
+        1,
+    )
+
+# 3b. Enable R8 minification + resource shrinking for release builds
+src = re.sub(r'(\brelease\s*\{[\s\S]*?\bminifyEnabled\s+)false\b', r'\1true', src, count=1)
+if "shrinkResources true" not in src:
+    src = re.sub(
+        r'(\bminifyEnabled\s+true\b)',
+        r'\1\n            shrinkResources true',
+        src,
+        count=1,
+    )
+src = src.replace("proguard-android.txt", "proguard-android-optimize.txt")
+
+# 3c. Pin modern AndroidX fragment/activity & play-services-ads
+if "androidx.fragment:fragment:" not in src:
+    deps_inject = (
+        "dependencies {\n"
+        "    implementation 'androidx.fragment:fragment:1.8.5'\n"
+        "    implementation 'androidx.activity:activity:1.9.3'\n"
+    )
+    src = src.replace("dependencies {\n", deps_inject, 1)
+
+if "com.google.android.gms:play-services-ads" not in src:
+    src = src.replace(
+        "dependencies {\n",
+        "dependencies {\n    implementation 'com.google.android.gms:play-services-ads:24.4.0'\n",
+        1,
+    )
+else:
+    src = re.sub(
+        r"com\.google\.android\.gms:play-services-ads:[0-9.]+",
+        "com.google.android.gms:play-services-ads:24.4.0",
+        src,
+    )
+
+if "resolutionStrategy" not in src and "\ndependencies {" in src:
+    src = src.replace(
+        "\ndependencies {",
+        "\nconfigurations.all {\n    resolutionStrategy {\n"
+        "        force 'androidx.fragment:fragment:1.8.5'\n"
+        "        force 'androidx.activity:activity:1.9.3'\n"
+        "    }\n}\n\ndependencies {",
+        1,
+    )
+
+open(gradle_path, "w").write(src)
+
+# 3d. Linker 16 KB ELF alignment in CMakeLists.txt
+if cmake_path and "max-page-size=16384" not in open(cmake_path).read():
+    cm = open(cmake_path).read()
+    cm = cm.replace(
+        "add_library(${CC_LIB_NAME} SHARED ${CC_ALL_SOURCES})",
+        'add_library(${CC_LIB_NAME} SHARED ${CC_ALL_SOURCES})\ntarget_link_options(${CC_LIB_NAME} PRIVATE "-Wl,-z,max-page-size=16384")',
+        1,
+    )
+    open(cmake_path, "w").write(cm)
+PY
+echo "app/build.gradle & CMakeLists.txt: 16KB page size, R8, AndroidX, play-services-ads patched"
 
 # AGP 8.7 cross-checks android.ndkVersion against android.ndkPath; the
 # generated template only declares ndkPath, so AGP falls back to its default
