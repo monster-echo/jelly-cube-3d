@@ -184,7 +184,13 @@ JAVA_DIR="$NATIVE_DIR/app/src/main/java/com/jellycube3d/bridge"
 mkdir -p "$JAVA_DIR"
 cp "$ROOT/native/android/AdMobBridge.java" "$ROOT/native/android/HapticsBridge.java" "$JAVA_DIR/"
 
-# 2. Inject the AdMob APPLICATION_ID meta-data into <application>.
+# 2. Inject the AdMob APPLICATION_ID meta-data into <application> and VIBRATE permission.
+if ! grep -q "android.permission.VIBRATE" "$MAIN_MANIFEST"; then
+	PERM_LINE="    <uses-permission android:name=\"android.permission.VIBRATE\"/>"
+	awk -v line="$PERM_LINE" 'BEGIN{done=0} /<uses-permission/{if(!done){print line; done=1}} {print}' \
+		"$MAIN_MANIFEST" > "$MAIN_MANIFEST.tmp" && mv "$MAIN_MANIFEST.tmp" "$MAIN_MANIFEST"
+	echo "manifest: VIBRATE permission injected"
+fi
 if ! grep -q "com.google.android.gms.ads.APPLICATION_ID" "$MAIN_MANIFEST"; then
 	META_LINE="        <meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"$ADMOB_APP_ID\" />"
 	awk -v line="$META_LINE" 'BEGIN{done=0} /<application/{print; if(!done){print line; done=1; next} next} {print}' \
@@ -196,7 +202,7 @@ fi
 STRINGS_XML="$PROJ_DIR/res/values/strings.xml"
 if [[ -f "$STRINGS_XML" ]]; then
 	python3 - "$STRINGS_XML" "$DISPLAY_NAME" <<'PY'
-import re, sys
+import os, re, sys
 p, name = sys.argv[1], sys.argv[2]
 src = open(p).read()
 dst = re.sub(
@@ -223,7 +229,7 @@ if [[ ! -f "$APP_GRADLE" ]]; then
 fi
 ANDROID_CMAKE="$NATIVE_DIR/CMakeLists.txt"
 python3 - "$APP_GRADLE" "$ANDROID_CMAKE" <<'PY'
-import re, sys
+import os, re, sys
 
 gradle_path, cmake_path = sys.argv[1], sys.argv[2]
 src = open(gradle_path).read()
@@ -248,6 +254,13 @@ if "useLegacyPackaging = false" not in src and "    sourceSets.main {" in src:
     )
 
 # 3b. Enable R8 minification + resource shrinking for release builds
+pg_path = os.path.join(os.path.dirname(gradle_path), "proguard-rules.pro")
+if pg_path and os.path.isfile(pg_path):
+    with open(pg_path, "r") as f:
+        pg_text = f.read()
+    if "com.jellycube3d.bridge" not in pg_text:
+        with open(pg_path, "a") as f:
+            f.write("\n-keep class com.jellycube3d.bridge.** { *; }\n")
 src = re.sub(r'(\brelease\s*\{[\s\S]*?\bminifyEnabled\s+)false\b', r'\1true', src, count=1)
 if "shrinkResources true" not in src:
     src = re.sub(

@@ -16,10 +16,13 @@ public class HapticsBridge {
     public static void impact(String style) {
         if (sVibrator == null || !sVibrator.hasVibrator()) return;
         long ms = "success".equals(style) ? 24 : "medium".equals(style) ? 14 : 7;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            sVibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
-        } else {
-            sVibrator.vibrate(ms);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                sVibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                sVibrator.vibrate(ms);
+            }
+        } catch (RuntimeException ignored) {
         }
     }
 }

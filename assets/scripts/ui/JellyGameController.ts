@@ -174,7 +174,7 @@ export class JellyGameController extends Component {
             level: this._playMode === 'level' || this._playMode === 'daily' ? this._currentLevel : null,
             challengeSize: this._challengeSize,
             freeSize: this._freeSize,
-            moves: this._cube.playerMoveCount,
+            moves: this._solved ? this._lastPlayerMoves.length : this._cube.playerMoveCount,
             elapsedMs: this.getCurrentElapsedMs(),
             canUndo: this._cube.canUndo && !this._solved,
             solved: this._solved,
@@ -381,10 +381,10 @@ export class JellyGameController extends Component {
             }
             this._applyCommittedMove(next, -next.quarterTurns * 90);
             if (!this._solved && this._autoSolving) {
-                this.scheduleOnce(step, 0.36);
+                this.scheduleOnce(() => step(), 0.36);
             }
         };
-        this.scheduleOnce(step, 0.36);
+        this.scheduleOnce(() => step(), 0.36);
     }
 
     replayLastSolve(onComplete: () => void): void {
@@ -403,11 +403,12 @@ export class JellyGameController extends Component {
         this._emit(`Replaying 0 / ${total}`);
 
         const step = () => {
-            if (!this._replaying || idx >= total) {
+            if (!this._replaying) return;
+            if (idx >= total) {
                 this._replaying = false;
                 this.cubeView?.triggerSolveBounce();
                 JellyAudio.playSolveChord();
-                onComplete();
+                this.scheduleOnce(() => onComplete(), 0.55);
                 return;
             }
             const m = this._lastPlayerMoves[idx++];
@@ -416,9 +417,9 @@ export class JellyGameController extends Component {
             this.cubeView?.animateMove(m, -m.quarterTurns * 90, 0);
             JellyAudio.playSnap(this._cube.solvedFaceCount());
             this._emit(`Replaying ${idx} / ${total}`);
-            this.scheduleOnce(step, 0.38);
+            this.scheduleOnce(() => step(), 0.38);
         };
-        this.scheduleOnce(step, 0.38);
+        this.scheduleOnce(() => step(), 0.38);
     }
 
     async claimFreeSugarAd(): Promise<void> {
@@ -743,7 +744,7 @@ export class JellyGameController extends Component {
             } else if (this._playMode === 'challenge') {
                 const rec = {
                     timeMs: Math.round(this._elapsedMs),
-                    moves: this._cube.playerMoveCount,
+                    moves: this._solved ? this._lastPlayerMoves.length : this._cube.playerMoveCount,
                     date: todayDateKey(),
                 };
                 const prev = this._save.bestRecords[this._challengeSize];
